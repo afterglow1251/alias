@@ -1,4 +1,4 @@
-import { createSignal } from "solid-js"
+import { createSignal, For } from "solid-js"
 import { cn } from "../../lib/cn"
 
 interface RoomCodeProps {
@@ -19,18 +19,19 @@ export function RoomCode(props: RoomCodeProps) {
   }
 
   return (
-    <div class="flex items-center gap-3">
-      <div class="text-sm text-text-muted">Код кімнати:</div>
-      <button
-        onClick={copyCode}
-        class={cn(
-          "flex items-center gap-2 rounded-lg border border-border bg-surface-light px-4 py-2 font-mono text-xl font-bold tracking-widest transition-all hover:border-accent cursor-pointer",
-          copied() && "border-success text-success",
+    <button
+      onClick={copyCode}
+      class={cn(
+        "flex items-center gap-1.5 rounded-xl glass inner-glow px-3 py-2 font-mono text-lg font-bold tracking-widest transition-all hover:border-accent/40 hover:shadow-[0_0_16px_rgba(125,211,252,0.1)] cursor-pointer",
+        copied() && "border-success/50 text-success shadow-[0_0_16px_rgba(52,211,153,0.15)]",
+      )}
+    >
+      <For each={props.code.split("")}>
+        {(letter) => (
+          <span class="inline-block">{letter}</span>
         )}
-      >
-        {props.code}
-        <span class="text-sm">{copied() ? "✓" : "📋"}</span>
-      </button>
-    </div>
+      </For>
+      <span class="text-sm ml-1">{copied() ? "ok!" : "📋"}</span>
+    </button>
   )
 }

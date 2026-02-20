@@ -2,7 +2,6 @@ import type { ServerWebSocket } from "bun"
 import type { Room, RoomClient } from "./types"
 import type { RoomInfo, Player, TeamState, TurnInfo } from "../shared/types"
 import type { WSServerMessage } from "../shared/ws-types"
-import { getCategories } from "./words"
 
 const CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 let clientCounter = 0
@@ -43,7 +42,6 @@ export function createRoom(hostId: string, hostNickname: string, ws: ServerWebSo
     settings: {
       turnDuration: 60,
       scoreToWin: 30,
-      categories: getCategories(),
     },
     phase: "lobby",
     teamAScore: 0,
@@ -154,7 +152,6 @@ export function getRoomInfo(room: Room, clientId: string): RoomInfo {
     currentTurn: getTurnInfo(room),
     timeLeft: room.timeLeft,
     winner: room.winner,
-    availableCategories: getCategories(),
   }
 }
 

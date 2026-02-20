@@ -8,8 +8,6 @@ import {
 } from "./rooms"
 import { getWordPool } from "./words"
 import { startTimer, stopTimer } from "./timer"
-import { getDb } from "./db/index"
-import { gameHistory } from "./db/schema"
 
 const TURN_START_DELAY = 3000
 
@@ -40,7 +38,7 @@ export function startTurn(room: Room) {
   const explainerIndex = team === "A" ? room.teamAExplainerIndex : room.teamBExplainerIndex
   const explainer = players[explainerIndex % players.length]
 
-  const wordPool = getWordPool(room.settings.categories, 200)
+  const wordPool = getWordPool(200)
 
   room.currentTurn = {
     team,
@@ -168,7 +166,6 @@ export function endTurn(room: Room) {
       teamB: teams.teamB,
     })
 
-    recordGame(room)
     return
   }
 
@@ -208,20 +205,4 @@ export function resetToLobby(room: Room) {
     phase: "lobby",
     turn: null,
   })
-}
-
-async function recordGame(room: Room) {
-  try {
-    const db = getDb()
-    if (!db || !room.winner) return
-    await db.insert(gameHistory).values({
-      roomCode: room.code,
-      winnerTeam: room.winner,
-      teamAScore: room.teamAScore,
-      teamBScore: room.teamBScore,
-      totalRounds: room.totalRounds,
-    })
-  } catch (e) {
-    console.error("Failed to record game:", e)
-  }
 }

@@ -1,4 +1,4 @@
-import { For, Show } from "solid-js"
+import { For } from "solid-js"
 import type { TurnInfo, TeamState } from "../../../shared/types"
 import { cn } from "../../lib/cn"
 import { Scoreboard } from "./Scoreboard"
@@ -12,13 +12,11 @@ interface TurnResultProps {
 }
 
 export function TurnResult(props: TurnResultProps) {
-  const guessedCount = () => props.turn.wordsResolved.filter((w) => w.guessed).length
-  const skippedCount = () => props.turn.wordsResolved.filter((w) => !w.guessed).length
+  const guessed = () => props.turn.wordsResolved.filter((w) => w.guessed).length
+  const skipped = () => props.turn.wordsResolved.filter((w) => !w.guessed).length
 
   return (
-    <div class="flex flex-col items-center gap-6 animate-fade-in">
-      <h2 class="text-2xl font-bold">Підсумок раунду</h2>
-
+    <div class="flex flex-col items-center gap-5 animate-fade-in">
       <Scoreboard
         teamA={props.teamA}
         teamB={props.teamB}
@@ -26,41 +24,56 @@ export function TurnResult(props: TurnResultProps) {
       />
 
       <div class="text-center">
-        <p class="text-sm text-text-muted">
-          {props.turn.explainer.nickname} пояснював(ла) за команду{" "}
-          <span class={props.turn.team === "A" ? "text-team-a" : "text-team-b"}>
-            {props.turn.team === "A" ? "Синіх" : "Жовтих"}
-          </span>
+        <p class="text-xs text-text-muted">
+          {props.turn.explainer.nickname} —{" "}
+          {props.turn.team === "A" ? "🧊 крижані" : "🌟 зоряні"}
         </p>
-        <div class="flex items-center justify-center gap-4 mt-2">
-          <span class="text-success font-medium">✓ {guessedCount()}</span>
-          <span class="text-danger font-medium">✗ {skippedCount()}</span>
-          <span class="text-accent font-bold">= {props.turn.scoreGained > 0 ? "+" : ""}{props.turn.scoreGained}</span>
+        <div class="flex items-center justify-center gap-3 mt-2">
+          <span class="glass-light rounded-full px-3 py-1 text-sm font-semibold text-success border border-success/20">
+            +{guessed()}
+          </span>
+          <span class="glass-light rounded-full px-3 py-1 text-sm font-semibold text-danger border border-danger/20">
+            -{skipped()}
+          </span>
+          <span
+            class={cn(
+              "text-4xl font-bold tabular-nums",
+              props.turn.scoreGained >= 0 ? "text-accent" : "text-danger",
+            )}
+          >
+            {props.turn.scoreGained > 0 ? "+" : ""}{props.turn.scoreGained}
+          </span>
         </div>
       </div>
 
-      <div class="w-full max-w-sm space-y-1 max-h-48 overflow-y-auto">
+      <div class="w-full max-w-xs space-y-1 max-h-44 overflow-y-auto">
         <For each={props.turn.wordsResolved}>
-          {(result) => (
+          {(result, i) => (
             <div
               class={cn(
-                "flex items-center justify-between rounded-lg px-3 py-1.5 text-sm",
-                result.guessed ? "bg-success/10 text-success" : "bg-danger/10 text-danger",
+                "flex items-center justify-between rounded-lg px-3 py-1.5 text-xs animate-slide-up glass-light",
+                result.guessed
+                  ? "border-l-2 border-l-success text-success"
+                  : "border-l-2 border-l-danger text-danger",
               )}
+              style={{ "animation-delay": `${i() * 50}ms`, "animation-fill-mode": "both" }}
             >
               <span>{result.word}</span>
-              <span>{result.guessed ? "✓" : "✗"}</span>
+              <span>{result.guessed ? "+" : "-"}</span>
             </div>
           )}
         </For>
       </div>
 
-      <div class="text-sm text-text-muted animate-pulse">
-        Наступна команда:{" "}
-        <span class={props.nextTeam === "A" ? "text-team-a font-medium" : "text-team-b font-medium"}>
-          {props.nextTeam === "A" ? "Сині" : "Жовті"}
-        </span>
-        {" "}через кілька секунд...
+      <div
+        class={cn(
+          "glass-light rounded-full px-4 py-1.5 text-xs font-medium animate-pulse border",
+          props.nextTeam === "A"
+            ? "text-team-a border-team-a/20"
+            : "text-team-b border-team-b/20",
+        )}
+      >
+        далі: {props.nextTeam === "A" ? "🧊 крижані" : "🌟 зоряні"}...
       </div>
     </div>
   )

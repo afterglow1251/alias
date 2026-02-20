@@ -172,6 +172,84 @@ export const wsHandler = new Elysia().ws("/ws", {
         handleWordResult(room, clientId, msg.guessed)
         break
       }
+
+      case "shuffle-teams": {
+        const clientId = msg.clientId
+        const roomCode = clientToRoom.get(clientId)
+        if (!roomCode) return
+        const room = getRoom(roomCode)
+        if (!room || room.hostId !== clientId) return
+        if (room.phase !== "lobby") return
+
+        // Gather all players who are in a team
+        const inTeam = Array.from(room.clients.values()).filter((c) => c.team !== null)
+        // Shuffle using Fisher-Yates
+        for (let i = inTeam.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1))
+          ;[inTeam[i], inTeam[j]] = [inTeam[j], inTeam[i]]
+        }
+        // Split evenly between teams
+        const half = Math.ceil(inTeam.length / 2)
+        for (let i = 0; i < inTeam.length; i++) {
+          inTeam[i].team = i < half ? "A" : "B"
+        }
+
+        const teams = getTeamStateForBroadcast(room)
+        broadcastToRoom(room, {
+          type: "team-updated",
+          teamA: teams.teamA,
+          teamB: teams.teamB,
+        })
+        break
+      }
+
+      case "kick-player": {
+        const clientId = msg.clientId
+        const targetClientId = msg.targetClientId
+        const roomCode = clientToRoom.get(clientId)
+        if (!roomCode) return
+        const room = getRoom(roomCode)
+        if (!room || room.hostId !== clientId) return
+        if (targetClientId === clientId) return // Can't kick yourself
+
+        const target = room.clients.get(targetClientId)
+        if (!target) return
+
+        // Notify the kicked player
+        sendToClient(room, targetClientId, { type: "player-kicked", clientId: targetClientId })
+
+        // Close their WebSocket
+        if (target.ws) {
+          try { target.ws.close() } catch {}
+        }
+
+        // Clear pending disconnect timer if any
+        const pending = pendingDisconnects.get(targetClientId)
+        if (pending) {
+          clearTimeout(pending)
+          pendingDisconnects.delete(targetClientId)
+        }
+
+        // Remove from room
+        removeClient(room, targetClientId)
+        clientToRoom.delete(targetClientId)
+
+        // Notify remaining players
+        broadcastToRoom(room, {
+          type: "player-left",
+          clientId: targetClientId,
+          newHostId: room.hostId,
+        })
+
+        // Update teams
+        const teams = getTeamStateForBroadcast(room)
+        broadcastToRoom(room, {
+          type: "team-updated",
+          teamA: teams.teamA,
+          teamB: teams.teamB,
+        })
+        break
+      }
     }
   },
 

@@ -46,12 +46,11 @@ export function GamePage() {
   }
 
   return (
-    <div class="min-h-dvh p-4 max-w-lg mx-auto">
-      <div class="space-y-6">
+    <div class="min-h-dvh p-4 max-w-lg mx-auto flex items-center justify-center">
+      <div class="w-full py-8">
         <Switch>
-          {/* Turn Start — countdown announcement */}
           <Match when={gameState.phase === "turn-start"}>
-            <div class="flex flex-col items-center justify-center min-h-[60dvh] gap-6 animate-fade-in">
+            <div class="flex flex-col items-center gap-6 animate-fade-in">
               <Scoreboard
                 teamA={gameState.teamA}
                 teamB={gameState.teamB}
@@ -59,30 +58,22 @@ export function GamePage() {
                 currentTeam={gameState.currentTurn?.team}
               />
               <div class="text-center">
-                <p class="text-lg text-text-muted mb-2">
-                  Команда{" "}
-                  <span
-                    class={
-                      gameState.currentTurn?.team === "A"
-                        ? "text-team-a font-bold"
-                        : "text-team-b font-bold"
-                    }
-                  >
-                    {gameState.currentTurn?.team === "A" ? "Синіх" : "Жовтих"}
-                  </span>
+                <p class="text-xs text-text-muted mb-2">
+                  {gameState.currentTurn?.team === "A" ? "🧊 крижані" : "🌟 зоряні"}
                 </p>
-                <p class="text-2xl font-bold mb-4">
+                <p class="text-lg font-semibold mb-4">
                   {gameState.currentTurn?.explainer.nickname} пояснює!
                 </p>
-                <div class="text-6xl animate-countdown">3...</div>
+                <div class="text-5xl animate-countdown">🐧</div>
               </div>
               <Show when={isExplainer()}>
-                <p class="text-accent font-medium">Приготуйтесь — ви пояснюєте!</p>
+                <p class="text-xs text-accent glass-light rounded-full px-4 py-1.5 border border-accent/20">
+                  приготуйся — це ти!
+                </p>
               </Show>
             </div>
           </Match>
 
-          {/* Turn Active */}
           <Match when={gameState.phase === "turn-active"}>
             <Show
               when={isExplainer()}
@@ -96,7 +87,6 @@ export function GamePage() {
             </Show>
           </Match>
 
-          {/* Turn End — summary */}
           <Match when={gameState.phase === "turn-end"}>
             <Show when={turnSummary()}>
               {(summary) => (
@@ -111,7 +101,6 @@ export function GamePage() {
             </Show>
           </Match>
 
-          {/* Game Over */}
           <Match when={gameState.phase === "game-over"}>
             <Show when={gameState.winner}>
               <GameOver

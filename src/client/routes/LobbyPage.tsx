@@ -1,4 +1,4 @@
-import { Show, createEffect } from "solid-js"
+import { Show, createEffect, onCleanup } from "solid-js"
 import { useNavigate } from "@solidjs/router"
 import { Card } from "../components/ui/card"
 import { Button } from "../components/ui/button"
@@ -12,12 +12,13 @@ import {
   updateSettings,
   startGameAction,
   leaveRoom,
+  shuffleTeams,
+  kickPlayer,
   myTeam,
   initGameStore,
 } from "../stores/game"
 import { setReconnectInfo } from "../services/ws"
 import { clientId, nickname } from "../stores/auth"
-import { onCleanup } from "solid-js"
 
 export function LobbyPage() {
   const navigate = useNavigate()
@@ -41,9 +42,10 @@ export function LobbyPage() {
     }
   })
 
+  // Redirect kicked players to home
   createEffect(() => {
-    if (!gameState.connected && !gameState.roomCode) {
-      // Not connected to any room, go back to home
+    if (!gameState.roomCode && gameState.error) {
+      navigate("/")
     }
   })
 
@@ -56,65 +58,89 @@ export function LobbyPage() {
     return (
       gameState.isHost &&
       gameState.teamA.players.length >= 2 &&
-      gameState.teamB.players.length >= 2 &&
-      gameState.settings.categories.length > 0
+      gameState.teamB.players.length >= 2
     )
   }
 
   return (
-    <div class="min-h-dvh p-4 max-w-2xl mx-auto">
-      <div class="space-y-6 animate-fade-in">
-        <div class="flex items-center justify-between">
+    <div class="min-h-dvh p-4 max-w-lg mx-auto">
+      <div class="space-y-5 animate-fade-in py-4">
+        <div class="flex items-center justify-between glass rounded-xl px-3 py-2 inner-glow">
           <Button variant="ghost" size="sm" onClick={handleLeave}>
-            ← Назад
+            ← назад
           </Button>
           <Show when={gameState.roomCode}>
             <RoomCode code={gameState.roomCode!} />
           </Show>
         </div>
 
+        <div class="text-center">
+          <span class="text-3xl animate-waddle inline-block">🐧</span>
+          <p class="glass-light inline-block rounded-full px-4 py-1.5 text-xs text-text-muted mt-2 border border-white/[0.04]">
+            збирайте друзів за кодом кімнати!
+          </p>
+        </div>
+
         <Show when={gameState.error}>
-          <div class="rounded-lg bg-danger/10 border border-danger/30 px-4 py-3 text-sm text-danger">
+          <div class="rounded-xl bg-danger/10 border border-danger/20 px-4 py-3 text-sm text-danger text-center">
             {gameState.error}
           </div>
         </Show>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <TeamPanel
-            team="A"
-            state={gameState.teamA}
-            myTeam={myTeam()}
-            onJoin={() => joinTeam("A")}
-            onLeave={leaveTeam}
-          />
-          <TeamPanel
-            team="B"
-            state={gameState.teamB}
-            myTeam={myTeam()}
-            onJoin={() => joinTeam("B")}
-            onLeave={leaveTeam}
-          />
+        <div class="grid grid-cols-2 gap-3">
+          <div class="animate-slide-in-left">
+            <TeamPanel
+              team="A"
+              state={gameState.teamA}
+              myTeam={myTeam()}
+              isHost={gameState.isHost}
+              onJoin={() => joinTeam("A")}
+              onLeave={leaveTeam}
+              onKick={kickPlayer}
+            />
+          </div>
+          <div class="animate-slide-in-right">
+            <TeamPanel
+              team="B"
+              state={gameState.teamB}
+              myTeam={myTeam()}
+              isHost={gameState.isHost}
+              onJoin={() => joinTeam("B")}
+              onLeave={leaveTeam}
+              onKick={kickPlayer}
+            />
+          </div>
         </div>
 
-        <Card>
+        <Show when={gameState.isHost && (gameState.teamA.players.length + gameState.teamB.players.length) >= 2}>
+          <Button variant="ghost" size="sm" class="w-full" onClick={shuffleTeams}>
+            🔀 перемішати команди
+          </Button>
+        </Show>
+
+        <Card class="space-y-0">
           <GameSettings
             settings={gameState.settings}
-            availableCategories={gameState.availableCategories}
             isHost={gameState.isHost}
             onUpdate={updateSettings}
           />
         </Card>
 
         <Show when={gameState.isHost}>
-          <Button class="w-full" size="lg" onClick={startGameAction} disabled={!canStart()}>
-            {canStart() ? "Почати гру!" : "Потрібно мін. 2 гравці в кожній команді"}
+          <Button
+            class={canStart() ? "w-full animate-pulse-glow" : "w-full"}
+            size="lg"
+            onClick={startGameAction}
+            disabled={!canStart()}
+          >
+            {canStart() ? "грати! 🎯" : "потрібно 2+ в кожній команді"}
           </Button>
         </Show>
 
         <Show when={!gameState.isHost}>
-          <div class="text-center text-sm text-text-muted">
-            Очікуємо, поки хост почне гру...
-          </div>
+          <p class="glass-light inline-flex items-center rounded-full px-4 py-1.5 text-xs text-text-muted mx-auto border border-white/[0.04]">
+            чекаємо на хоста... 🐧
+          </p>
         </Show>
       </div>
     </div>

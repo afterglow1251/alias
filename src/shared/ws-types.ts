@@ -8,6 +8,8 @@ export type WSClientMessage =
   | { type: "update-settings"; clientId: string; settings: Partial<GameSettings> }
   | { type: "start-game"; clientId: string }
   | { type: "word-result"; clientId: string; guessed: boolean }
+  | { type: "shuffle-teams"; clientId: string }
+  | { type: "kick-player"; clientId: string; targetClientId: string }
 
 // Server → Client
 export type WSServerMessage =
@@ -15,6 +17,7 @@ export type WSServerMessage =
   | { type: "error"; message: string }
   | { type: "player-joined"; player: Player }
   | { type: "player-left"; clientId: string; newHostId: string | null }
+  | { type: "player-kicked"; clientId: string }
   | { type: "team-updated"; teamA: TeamState; teamB: TeamState }
   | { type: "settings-updated"; settings: GameSettings }
   | { type: "phase-changed"; phase: GamePhase; turn: TurnInfo | null }

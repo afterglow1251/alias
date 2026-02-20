@@ -18,7 +18,6 @@ interface GameState {
   timeLeft: number
   currentWord: string | null
   winner: "A" | "B" | null
-  availableCategories: string[]
   error: string | null
 }
 
@@ -29,13 +28,12 @@ const initialState: GameState = {
   players: [],
   teamA: { players: [], score: 0, currentExplainerIndex: 0 },
   teamB: { players: [], score: 0, currentExplainerIndex: 0 },
-  settings: { turnDuration: 60, scoreToWin: 30, categories: [] },
+  settings: { turnDuration: 60, scoreToWin: 30 },
   phase: "lobby",
   currentTurn: null,
   timeLeft: 0,
   currentWord: null,
   winner: null,
-  availableCategories: [],
   error: null,
 }
 
@@ -63,7 +61,6 @@ function handleMessage(msg: WSServerMessage) {
         currentTurn: room.currentTurn,
         timeLeft: room.timeLeft,
         winner: room.winner,
-        availableCategories: room.availableCategories,
         error: null,
       })
       break
@@ -138,6 +135,14 @@ function handleMessage(msg: WSServerMessage) {
     case "game-over":
       setState({ winner: msg.winner, teamA: msg.teamA, teamB: msg.teamB, phase: "game-over" })
       break
+
+    case "player-kicked":
+      if (msg.clientId === clientId()) {
+        disconnect()
+        setState({ ...initialState, error: "Тебе вигнали з кімнати 🐧" })
+        setTurnSummary(null)
+      }
+      break
   }
 }
 
@@ -176,6 +181,14 @@ export function wordResult(guessed: boolean) {
 
 export function playAgain() {
   send({ type: "start-game", clientId: clientId() })
+}
+
+export function shuffleTeams() {
+  send({ type: "shuffle-teams", clientId: clientId() })
+}
+
+export function kickPlayer(targetClientId: string) {
+  send({ type: "kick-player", clientId: clientId(), targetClientId })
 }
 
 export function leaveRoom() {

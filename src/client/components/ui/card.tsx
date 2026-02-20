@@ -8,7 +8,7 @@ export function Card(props: CardProps) {
 
   return (
     <div
-      class={cn("rounded-xl border border-border bg-surface p-6", local.class)}
+      class={cn("rounded-2xl p-6 glass inner-glow", local.class)}
       {...rest}
     >
       {local.children}

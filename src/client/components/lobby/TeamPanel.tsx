@@ -9,51 +9,72 @@ interface TeamPanelProps {
   team: "A" | "B"
   state: TeamState
   myTeam: "A" | "B" | null
+  isHost?: boolean
   onJoin: () => void
   onLeave: () => void
+  onKick?: (clientId: string) => void
   disabled?: boolean
 }
 
 export function TeamPanel(props: TeamPanelProps) {
   const isMyTeam = () => props.myTeam === props.team
-  const teamName = () => (props.team === "A" ? "Сині" : "Жовті")
-  const teamColor = () => (props.team === "A" ? "team-a" : "team-b")
+  const teamEmoji = () => (props.team === "A" ? "🧊" : "🌟")
+  const teamName = () => (props.team === "A" ? "крижані" : "зоряні")
 
   return (
     <div
       class={cn(
-        "flex flex-col rounded-xl border-2 p-4 transition-all",
-        props.team === "A" ? "border-team-a/30 team-a-gradient" : "border-team-b/30 team-b-gradient",
-        isMyTeam() && (props.team === "A" ? "border-team-a" : "border-team-b"),
+        "flex flex-col rounded-2xl p-4 transition-all glass inner-glow",
+        props.team === "A" ? "team-a-top-accent" : "team-b-top-accent",
+        isMyTeam() &&
+          (props.team === "A"
+            ? "shadow-[0_0_24px_rgba(96,165,250,0.12)]"
+            : "shadow-[0_0_24px_rgba(251,191,36,0.12)]"),
       )}
     >
       <div class="flex items-center justify-between mb-3">
-        <h3 class={cn("text-lg font-bold", props.team === "A" ? "text-team-a" : "text-team-b")}>
-          {teamName()}
+        <h3 class={cn("font-semibold flex items-center gap-1.5", props.team === "A" ? "text-team-a" : "text-team-b")}>
+          {teamEmoji()} {teamName()}
         </h3>
-        <Badge variant={teamColor()}>{props.state.players.length} гравців</Badge>
+        <Badge variant={props.team === "A" ? "team-a" : "team-b"}>{props.state.players.length}</Badge>
       </div>
 
-      <div class="flex-1 space-y-2 mb-4 min-h-[80px]">
+      <div class="flex-1 space-y-1.5 mb-3 min-h-[72px]">
         <For each={props.state.players}>
           {(player) => (
             <div
               class={cn(
-                "flex items-center gap-2 rounded-lg px-3 py-2 text-sm",
-                player.clientId === clientId() ? "bg-white/10 font-medium" : "bg-white/5",
-                !player.connected && "opacity-50",
+                "flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm",
+                player.clientId === clientId() ? "glass-light font-medium border border-white/[0.06]" : "bg-white/[0.03]",
+                !player.connected && "opacity-40",
               )}
             >
-              <span class={cn("w-2 h-2 rounded-full", player.connected ? "bg-success" : "bg-text-muted")} />
-              <span>{player.nickname}</span>
+              <span
+                class={cn(
+                  "w-1.5 h-1.5 rounded-full",
+                  player.connected
+                    ? "bg-success shadow-[0_0_6px_rgba(52,211,153,0.5)]"
+                    : "bg-text-muted",
+                )}
+              />
+              <span class="truncate">{player.nickname}</span>
               <Show when={player.isHost}>
-                <Badge variant="default">хост</Badge>
+                <span class="text-xs ml-auto">👑</span>
+              </Show>
+              <Show when={props.isHost && !player.isHost && player.clientId !== clientId()}>
+                <button
+                  class="ml-auto text-xs text-text-muted hover:text-danger transition-colors px-1"
+                  onClick={() => props.onKick?.(player.clientId)}
+                  title="вигнати"
+                >
+                  ✕
+                </button>
               </Show>
             </div>
           )}
         </For>
         <Show when={props.state.players.length === 0}>
-          <div class="text-sm text-text-muted text-center py-4">Поки нікого...</div>
+          <div class="text-xs text-text-muted text-center py-4">тут поки порожньо 🐧</div>
         </Show>
       </div>
 
@@ -64,15 +85,16 @@ export function TeamPanel(props: TeamPanelProps) {
             <Button
               variant={props.team === "A" ? "team-a" : "team-b"}
               size="sm"
+              class="w-full"
               onClick={props.onJoin}
               disabled={props.myTeam !== null && props.myTeam !== props.team}
             >
-              Приєднатись
+              приєднатись
             </Button>
           }
         >
-          <Button variant="outline" size="sm" onClick={props.onLeave}>
-            Вийти з команди
+          <Button variant="ghost" size="sm" class="w-full" onClick={props.onLeave}>
+            вийти
           </Button>
         </Show>
       </Show>
