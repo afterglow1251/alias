@@ -1,0 +1,45 @@
+@import "tailwindcss";
+@import "./animations.css";
+
+@theme {
+  --color-base: #0f0f1a;
+  --color-surface: #1a1a2e;
+  --color-surface-light: #25253d;
+  --color-border: #2d2d4a;
+  --color-text: #e8e8f0;
+  --color-text-muted: #8888a8;
+  --color-accent: #6c5ce7;
+  --color-team-a: #3b82f6;
+  --color-team-a-bg: rgba(59, 130, 246, 0.15);
+  --color-team-b: #eab308;
+  --color-team-b-bg: rgba(234, 179, 8, 0.15);
+  --color-success: #22c55e;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+}
+
+body {
+  background-color: var(--color-base);
+  color: var(--color-text);
+  font-family: system-ui, -apple-system, sans-serif;
+  min-height: 100dvh;
+}
+
+#root {
+  min-height: 100dvh;
+}
+
+.team-a-gradient {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.05));
+}
+
+.team-b-gradient {
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(234, 179, 8, 0.05));
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #6c5ce7, #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

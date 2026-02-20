@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: alias-game
+    runtime: docker
+    repo: https://github.com/yuriivoitko/alias
+    branch: main
+    envVars:
+      - key: DATABASE_URL
+        sync: false
