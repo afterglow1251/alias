@@ -37,6 +37,7 @@ const scorePercent = computed(() => {
   <div
     :class="cn(
       'flex flex-col rounded-lg bg-card border overflow-hidden transition-all',
+      !isGameMode && !disabled && 'min-h-[10rem]',
     )"
     :style="isCurrentTurn ? {
       borderColor: `${teamColor}66`,
@@ -60,7 +61,7 @@ const scorePercent = computed(() => {
           />
         </template>
         <template v-else>
-          <span class="text-sm font-semibold" :style="{ color: teamColor }">
+          <span class="text-sm font-semibold border-b border-transparent" :style="{ color: teamColor }">
             {{ state.name }}
           </span>
         </template>
@@ -125,27 +126,17 @@ const scorePercent = computed(() => {
       </div>
 
       <!-- Action (lobby mode only) -->
-      <template v-if="!disabled">
-        <Button
-          v-if="isMyTeam"
-          variant="ghost"
-          size="sm"
-          class="w-full text-muted-foreground"
-          @click="emit('leave')"
-        >
-          вийти
-        </Button>
-        <Button
-          v-else
-          variant="outline"
-          size="sm"
-          class="w-full"
-          :style="{ color: teamColor, borderColor: `${teamColor}40` }"
-          @click="emit('join')"
-        >
-          приєднатись
-        </Button>
-      </template>
+      <Button
+        v-if="!disabled"
+        variant="outline"
+        size="sm"
+        class="w-full"
+        :class="isMyTeam && 'text-muted-foreground'"
+        :style="!isMyTeam ? { color: teamColor, borderColor: `${teamColor}40` } : undefined"
+        @click="isMyTeam ? emit('leave') : emit('join')"
+      >
+        {{ isMyTeam ? 'вийти' : 'приєднатись' }}
+      </Button>
     </div>
   </div>
 </template>

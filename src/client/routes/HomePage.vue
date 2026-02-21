@@ -60,7 +60,7 @@ function onRoomCodeInput(val: string) {
 <template>
   <div class="min-h-dvh flex flex-col items-center justify-center p-4">
     <div class="w-full max-w-sm space-y-8">
-      <div class="text-center animate-fade-in">
+      <div class="text-center">
         <div class="text-8xl mb-3 inline-block">🎯</div>
         <h1 class="text-5xl font-extrabold mb-1.5">Alias</h1>
         <p class="inline-block rounded-full px-4 py-1.5 text-muted-foreground text-sm bg-secondary border border-border">
@@ -68,7 +68,7 @@ function onRoomCodeInput(val: string) {
         </p>
       </div>
 
-      <Card class="space-y-4" :style="{ animation: 'fade-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both' }">
+      <Card class="space-y-4">
         <div>
           <label class="text-xs text-muted-foreground mb-1.5 block">твій нікнейм</label>
           <Input
@@ -106,7 +106,6 @@ function onRoomCodeInput(val: string) {
 
       <p
         class="text-center text-xs text-muted-foreground"
-        :style="{ animation: 'fade-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both' }"
       >
         збери друзів, поділись на команди
         <br />
