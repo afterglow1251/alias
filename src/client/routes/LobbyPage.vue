@@ -122,34 +122,36 @@ const rightTeams = computed(() => {
 <template>
   <div class="min-h-dvh p-4 mx-auto max-w-5xl">
     <div class="space-y-4 py-3">
-      <!-- Header: back + room code -->
+      <!-- Header: back + settings -->
       <div class="flex items-center justify-between">
         <button
           @click="handleLeave"
-          class="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+          class="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+          title="назад"
         >
-          ← назад
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         </button>
-        <div class="flex items-center gap-2">
-          <RoomCode v-if="store.state.roomCode" :code="store.state.roomCode" />
-          <Dialog v-if="!isPlaying" v-model:open="settingsOpen">
-            <DialogTrigger as-child>
-              <Button variant="outline" size="icon-sm" title="налаштування">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Налаштування гри</DialogTitle>
-              </DialogHeader>
-              <GameSettings
-                :settings="store.state.settings"
-                :is-host="store.state.isHost"
-                @update="store.updateSettings($event)"
-              />
-            </DialogContent>
-          </Dialog>
-        </div>
+        <Dialog v-if="!isPlaying" v-model:open="settingsOpen">
+          <DialogTrigger as-child>
+            <Button variant="outline" size="icon-sm" title="налаштування">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Налаштування гри</DialogTitle>
+            </DialogHeader>
+            <GameSettings
+              :settings="store.state.settings"
+              :is-host="store.state.isHost"
+              @update="store.updateSettings($event)"
+            />
+            <div v-if="store.state.roomCode" class="pt-2 border-t">
+              <p class="text-xs text-muted-foreground mb-2">Код кімнати</p>
+              <RoomCode :code="store.state.roomCode" />
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div
