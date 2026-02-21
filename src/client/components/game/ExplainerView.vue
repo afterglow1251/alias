@@ -7,6 +7,8 @@ import { cn } from "../../lib/cn"
 
 const store = useGameStore()
 
+const isLastWord = computed(() => store.state.phase === "turn-last-word")
+
 const guessed = computed(() => store.state.currentTurn?.wordsResolved.filter((w) => w.guessed).length ?? 0)
 const skipped = computed(() => store.state.currentTurn?.wordsResolved.filter((w) => !w.guessed).length ?? 0)
 const reversedWords = computed(
@@ -16,9 +18,12 @@ const reversedWords = computed(
 
 <template>
   <div class="flex flex-col items-center gap-4 animate-fade-in">
-    <Timer :time-left="store.state.timeLeft" :total="store.state.settings.turnDuration" />
+    <Timer v-if="!isLastWord" :time-left="store.state.timeLeft" :total="store.state.settings.turnDuration" />
 
-    <p class="text-xs text-muted-foreground rounded-full px-4 py-1.5 bg-secondary border">
+    <p v-if="isLastWord" class="text-xs text-muted-foreground rounded-full px-4 py-1.5 bg-secondary border animate-pulse">
+      останнє слово!
+    </p>
+    <p v-else class="text-xs text-muted-foreground rounded-full px-4 py-1.5 bg-secondary border">
       поясни слово команді, не називай його!
     </p>
 

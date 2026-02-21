@@ -251,8 +251,8 @@ const rightTeams = computed(() => {
                 </div>
               </template>
 
-              <!-- turn-active -->
-              <template v-else-if="store.state.phase === 'turn-active'">
+              <!-- turn-active / turn-last-word -->
+              <template v-else-if="store.state.phase === 'turn-active' || store.state.phase === 'turn-last-word'">
                 <ExplainerView v-if="store.isExplainer" />
                 <GuesserView v-else-if="store.isMyTeamTurn" />
                 <SpectatorView v-else />

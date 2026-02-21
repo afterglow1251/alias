@@ -2,6 +2,8 @@
 import { computed } from "vue"
 import type { TurnInfo, TeamState } from "../../../shared/types"
 import { TEAM_COLORS } from "../../../shared/teams"
+import { Button } from "../ui/button"
+import { useGameStore } from "../../stores/game"
 import { cn } from "../../lib/cn"
 
 const props = defineProps<{
@@ -11,11 +13,20 @@ const props = defineProps<{
   scoreToWin: number
 }>()
 
+const store = useGameStore()
+
 const guessed = computed(() => props.turn.wordsResolved.filter((w) => w.guessed).length)
 const skipped = computed(() => props.turn.wordsResolved.filter((w) => !w.guessed).length)
 const nextTeamColor = computed(() => TEAM_COLORS[props.nextTeam] ?? "#888")
 const nextTeamName = computed(() => props.teams[props.nextTeam]?.name ?? "???")
 const turnTeamName = computed(() => props.teams[props.turn.team]?.name ?? "???")
+
+function toggleWord(index: number) {
+  if (!store.isExplainer) return
+  const word = props.turn.wordsResolved[index]
+  if (!word) return
+  store.editWordResult(index, !word.guessed)
+}
 </script>
 
 <template>
@@ -49,7 +60,9 @@ const turnTeamName = computed(() => props.teams[props.turn.team]?.name ?? "???")
         :class="cn(
           'flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm',
           result.guessed ? 'bg-success/10' : 'bg-destructive/10',
+          store.isExplainer && 'cursor-pointer active:scale-[0.98] transition-transform',
         )"
+        @click="toggleWord(i)"
       >
         <span :class="result.guessed ? 'text-success' : 'text-destructive'" class="text-xs">
           {{ result.guessed ? '✓' : '✕' }}
@@ -58,11 +71,19 @@ const turnTeamName = computed(() => props.teams[props.turn.team]?.name ?? "???")
       </div>
     </div>
 
+    <p v-if="store.isExplainer" class="text-[11px] text-muted-foreground">
+      натисніть на слово щоб змінити результат
+    </p>
+
+    <Button size="lg" class="w-full max-w-sm" @click="store.advanceTurn()">
+      Далі
+    </Button>
+
     <div
-      class="rounded-full px-4 py-1.5 text-xs font-medium animate-pulse border bg-card"
+      class="rounded-full px-4 py-1.5 text-xs font-medium border bg-card"
       :style="{ color: nextTeamColor, borderColor: `${nextTeamColor}33` }"
     >
-      далі: {{ nextTeamName }}...
+      далі: {{ nextTeamName }}
     </div>
   </div>
 </template>

@@ -12,6 +12,8 @@ export type WSClientMessage =
   | { type: "shuffle-teams"; clientId: string }
   | { type: "kick-player"; clientId: string; targetClientId: string }
   | { type: "update-team-name"; clientId: string; team: number; name: string }
+  | { type: "advance-turn"; clientId: string }
+  | { type: "edit-word-result"; clientId: string; wordIndex: number; guessed: boolean }
 
 // Server → Client
 export type WSServerMessage =

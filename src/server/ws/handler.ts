@@ -12,7 +12,7 @@ import {
   getTeamsBroadcast,
   sendToClient,
 } from "../rooms"
-import { startGame, handleWordResult, resetToLobby, confirmTurnStart } from "../game"
+import { startGame, handleWordResult, resetToLobby, confirmTurnStart, advanceTurn, editWordResult } from "../game"
 import { wsToClientId, clientToRoom, pendingDisconnects } from "./state"
 
 const GRACE_PERIOD = 10_000
@@ -84,7 +84,6 @@ export const wsHandler = new Elysia().ws("/ws", {
 
         const client = room.clients.get(clientId)
         if (!client) return
-        if (room.phase !== "lobby") return
 
         // Validate team index
         if (typeof msg.team !== "number" || msg.team < 0 || msg.team >= room.settings.teamCount) return
@@ -107,7 +106,6 @@ export const wsHandler = new Elysia().ws("/ws", {
 
         const client = room.clients.get(clientId)
         if (!client) return
-        if (room.phase !== "lobby") return
 
         client.team = null
 
@@ -317,6 +315,28 @@ export const wsHandler = new Elysia().ws("/ws", {
           type: "team-updated",
           ...getTeamsBroadcast(room),
         })
+        break
+      }
+
+      case "advance-turn": {
+        const clientId = msg.clientId
+        const roomCode = clientToRoom.get(clientId)
+        if (!roomCode) return
+        const room = getRoom(roomCode)
+        if (!room) return
+
+        advanceTurn(room)
+        break
+      }
+
+      case "edit-word-result": {
+        const clientId = msg.clientId
+        const roomCode = clientToRoom.get(clientId)
+        if (!roomCode) return
+        const room = getRoom(roomCode)
+        if (!room) return
+
+        editWordResult(room, clientId, msg.wordIndex, msg.guessed)
         break
       }
     }

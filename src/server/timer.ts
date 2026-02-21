@@ -1,6 +1,6 @@
 import type { Room } from "./types"
 import { broadcastToRoom } from "./rooms"
-import { endTurn } from "./game"
+import { endTurn, enterLastWordPhase } from "./game"
 
 export function startTimer(room: Room) {
   if (room.timer) clearInterval(room.timer)
@@ -14,7 +14,12 @@ export function startTimer(room: Room) {
 
     if (room.timeLeft <= 0) {
       stopTimer(room)
-      endTurn(room)
+
+      if (room.settings.lastWordInfinite && room.currentTurn?.currentWord) {
+        enterLastWordPhase(room)
+      } else {
+        endTurn(room)
+      }
     }
   }, 1000)
 }

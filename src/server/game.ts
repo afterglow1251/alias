@@ -9,8 +9,6 @@ import {
 import { getWordPool } from "./words"
 import { startTimer, stopTimer } from "./timer"
 
-const TURN_END_DELAY = 5000
-
 export function startGame(room: Room) {
   if (room.phase !== "lobby") return
 
@@ -96,7 +94,8 @@ export function sendNextWord(room: Room) {
 }
 
 export function handleWordResult(room: Room, clientId: string, guessed: boolean) {
-  if (!room.currentTurn || room.phase !== "turn-active") return
+  if (!room.currentTurn) return
+  if (room.phase !== "turn-active" && room.phase !== "turn-last-word") return
   if (room.currentTurn.explainerClientId !== clientId) return
 
   const word = room.currentTurn.currentWord
@@ -109,7 +108,7 @@ export function handleWordResult(room: Room, clientId: string, guessed: boolean)
   if (guessed) {
     room.currentTurn.scoreGained++
     room.teamScores[team]++
-  } else {
+  } else if (room.settings.skipPenalty) {
     room.currentTurn.scoreGained--
     room.teamScores[team]--
   }
@@ -120,6 +119,12 @@ export function handleWordResult(room: Room, clientId: string, guessed: boolean)
     result: { word, guessed },
     teams,
   })
+
+  // If in last-word phase, end the turn after this word
+  if (room.phase === "turn-last-word") {
+    endTurn(room)
+    return
+  }
 
   sendNextWord(room)
 }
@@ -177,12 +182,68 @@ export function endTurn(room: Room) {
     nextTeam,
   })
 
-  // Auto-start next turn-start after delay (explainer still needs to confirm)
-  setTimeout(() => {
-    if (room.phase === "turn-end") {
-      startTurn(room)
-    }
-  }, TURN_END_DELAY)
+  // No auto-advance — players click "Далі" to proceed
+}
+
+export function advanceTurn(room: Room) {
+  if (room.phase !== "turn-end") return
+  startTurn(room)
+}
+
+export function editWordResult(room: Room, clientId: string, wordIndex: number, guessed: boolean) {
+  if (room.phase !== "turn-end") return
+  if (!room.currentTurn) return
+  if (room.currentTurn.explainerClientId !== clientId) return
+
+  const word = room.currentTurn.wordsResolved[wordIndex]
+  if (!word || word.guessed === guessed) return
+
+  const team = room.currentTurn.team
+  const oldGuessed = word.guessed
+
+  // Reverse old score
+  if (oldGuessed) {
+    room.currentTurn.scoreGained--
+    room.teamScores[team]--
+  } else if (room.settings.skipPenalty) {
+    room.currentTurn.scoreGained++
+    room.teamScores[team]++
+  }
+
+  // Apply new score
+  if (guessed) {
+    room.currentTurn.scoreGained++
+    room.teamScores[team]++
+  } else if (room.settings.skipPenalty) {
+    room.currentTurn.scoreGained--
+    room.teamScores[team]--
+  }
+
+  word.guessed = guessed
+
+  const { teams } = getTeamsBroadcast(room)
+  const turnInfo = getTurnInfo(room)!
+
+  broadcastToRoom(room, {
+    type: "turn-summary",
+    turn: turnInfo,
+    teams,
+    nextTeam: room.currentTeam,
+  })
+}
+
+export function enterLastWordPhase(room: Room) {
+  if (!room.currentTurn?.currentWord) {
+    endTurn(room)
+    return
+  }
+
+  room.phase = "turn-last-word"
+  broadcastToRoom(room, {
+    type: "phase-changed",
+    phase: "turn-last-word",
+    turn: getTurnInfo(room),
+  })
 }
 
 export function resetToLobby(room: Room) {

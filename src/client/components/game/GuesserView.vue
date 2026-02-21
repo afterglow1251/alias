@@ -6,6 +6,8 @@ import { cn } from "../../lib/cn"
 
 const store = useGameStore()
 
+const isLastWord = computed(() => store.state.phase === "turn-last-word")
+
 const reversedWords = computed(
   () => [...(store.state.currentTurn?.wordsResolved ?? [])].reverse(),
 )
@@ -13,10 +15,10 @@ const reversedWords = computed(
 
 <template>
   <div class="flex flex-col items-center gap-4 animate-fade-in">
-    <Timer :time-left="store.state.timeLeft" :total="store.state.settings.turnDuration" />
+    <Timer v-if="!isLastWord" :time-left="store.state.timeLeft" :total="store.state.settings.turnDuration" />
 
     <div class="text-center">
-      <p class="text-sm font-medium">вгадуйте!</p>
+      <p class="text-sm font-medium">{{ isLastWord ? 'останнє слово...' : 'вгадуйте!' }}</p>
       <p class="text-xs text-muted-foreground mt-0.5">
         {{ store.state.currentTurn?.explainer.nickname }} пояснює
       </p>
@@ -27,13 +29,14 @@ const reversedWords = computed(
         v-for="(result, idx) in reversedWords"
         :key="idx"
         :class="cn(
-          'flex items-center justify-between rounded-lg px-3 py-1.5 text-xs animate-slide-up bg-white/[0.04]',
-          result.guessed
-            ? 'border-l-2 border-l-success text-success'
-            : 'border-l-2 border-l-destructive text-destructive',
+          'flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm animate-slide-up',
+          result.guessed ? 'bg-success/10' : 'bg-destructive/10',
         )"
       >
-        <span>{{ result.word }}</span>
+        <span :class="result.guessed ? 'text-success' : 'text-destructive'" class="text-xs">
+          {{ result.guessed ? '✓' : '✕' }}
+        </span>
+        <span :class="!result.guessed && 'line-through text-muted-foreground'">{{ result.word }}</span>
       </div>
     </div>
   </div>

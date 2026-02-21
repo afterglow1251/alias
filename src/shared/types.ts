@@ -17,9 +17,11 @@ export interface GameSettings {
   turnDuration: number // seconds (30, 45, 60, 90)
   scoreToWin: number // points to win (20, 30, 40, 50)
   teamCount: number // 2-6
+  skipPenalty: boolean // true = -1 for skip, false = 0
+  lastWordInfinite: boolean // true = finish last word after timer
 }
 
-export type GamePhase = "lobby" | "turn-start" | "turn-active" | "turn-end" | "game-over"
+export type GamePhase = "lobby" | "turn-start" | "turn-active" | "turn-last-word" | "turn-end" | "game-over"
 
 export interface WordResult {
   word: string

@@ -37,7 +37,7 @@ function makeInitialState(): GameState {
     isHost: false,
     players: [],
     teams: makeDefaultTeams(DEFAULT_TEAM_COUNT),
-    settings: { turnDuration: 60, scoreToWin: 30, teamCount: DEFAULT_TEAM_COUNT },
+    settings: { turnDuration: 60, scoreToWin: 30, teamCount: DEFAULT_TEAM_COUNT, skipPenalty: true, lastWordInfinite: true },
     phase: "lobby",
     currentTurn: null,
     timeLeft: 0,
@@ -129,10 +129,11 @@ export const useGameStore = defineStore("game", () => {
       case "word-resolved":
         state.teams = msg.teams
         if (state.currentTurn) {
+          const delta = msg.result.guessed ? 1 : (state.settings.skipPenalty ? -1 : 0)
           state.currentTurn = {
             ...state.currentTurn,
             wordsResolved: [...state.currentTurn.wordsResolved, msg.result],
-            scoreGained: state.currentTurn.scoreGained + (msg.result.guessed ? 1 : -1),
+            scoreGained: state.currentTurn.scoreGained + delta,
           }
         }
         break
@@ -218,6 +219,14 @@ export const useGameStore = defineStore("game", () => {
     send({ type: "kick-player", clientId: clientId.value, targetClientId })
   }
 
+  function advanceTurn() {
+    send({ type: "advance-turn", clientId: clientId.value })
+  }
+
+  function editWordResult(wordIndex: number, guessed: boolean) {
+    send({ type: "edit-word-result", clientId: clientId.value, wordIndex, guessed })
+  }
+
   function updateTeamName(team: number, name: string) {
     send({ type: "update-team-name", clientId: clientId.value, team, name })
   }
@@ -268,6 +277,8 @@ export const useGameStore = defineStore("game", () => {
     playAgain,
     shuffleTeams,
     kickPlayer,
+    advanceTurn,
+    editWordResult,
     updateTeamName,
     leaveRoom,
     initStore,

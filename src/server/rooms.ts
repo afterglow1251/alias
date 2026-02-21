@@ -46,6 +46,8 @@ export function createRoom(hostId: string, hostNickname: string, ws: ServerWebSo
       turnDuration: 60,
       scoreToWin: 30,
       teamCount,
+      skipPenalty: true,
+      lastWordInfinite: true,
     },
     phase: "lobby",
     teamScores: Array.from({ length: teamCount }, () => 0),
