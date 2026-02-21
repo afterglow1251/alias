@@ -23,20 +23,27 @@ onMounted(() => {
   }
 })
 
-function handleCreate() {
-  if (!nickname.value.trim()) {
+function validateNickname(): boolean {
+  const name = nickname.value.trim()
+  if (!name) {
     error.value = "Як тебе звати? :)"
-    return
+    return false
   }
+  if (name.length < 2) {
+    error.value = "Мінімум 2 символи"
+    return false
+  }
+  return true
+}
+
+function handleCreate() {
+  if (!validateNickname()) return
   store.createRoom()
   router.push("/lobby")
 }
 
 function handleJoin() {
-  if (!nickname.value.trim()) {
-    error.value = "Як тебе звати? :)"
-    return
-  }
+  if (!validateNickname()) return
   if (!roomCode.value.trim()) {
     error.value = "Введи код кімнати"
     return
@@ -70,7 +77,10 @@ function onRoomCodeInput(val: string) {
 
       <Card class="space-y-4">
         <div>
-          <label class="text-xs text-muted-foreground mb-1.5 block">твій нікнейм</label>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-xs text-muted-foreground">твій нікнейм</label>
+            <span class="text-xs tabular-nums" :class="nickname.length < 2 ? 'text-destructive' : 'text-muted-foreground'">{{ nickname.length }}/20</span>
+          </div>
           <Input
             :model-value="nickname"
             @update:model-value="onNicknameInput"
