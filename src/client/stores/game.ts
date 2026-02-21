@@ -198,6 +198,10 @@ export const useGameStore = defineStore("game", () => {
     send({ type: "start-game", clientId: clientId.value })
   }
 
+  function confirmTurnStart() {
+    send({ type: "confirm-turn-start", clientId: clientId.value })
+  }
+
   function wordResult(guessed: boolean) {
     send({ type: "word-result", clientId: clientId.value, guessed })
   }
@@ -259,6 +263,7 @@ export const useGameStore = defineStore("game", () => {
     leaveTeam,
     updateSettings,
     startGameAction,
+    confirmTurnStart,
     wordResult,
     playAgain,
     shuffleTeams,

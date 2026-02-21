@@ -8,6 +8,7 @@ export type WSClientMessage =
   | { type: "update-settings"; clientId: string; settings: Partial<GameSettings> }
   | { type: "start-game"; clientId: string }
   | { type: "word-result"; clientId: string; guessed: boolean }
+  | { type: "confirm-turn-start"; clientId: string }
   | { type: "shuffle-teams"; clientId: string }
   | { type: "kick-player"; clientId: string; targetClientId: string }
   | { type: "update-team-name"; clientId: string; team: number; name: string }

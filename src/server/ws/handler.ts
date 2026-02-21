@@ -12,7 +12,7 @@ import {
   getTeamsBroadcast,
   sendToClient,
 } from "../rooms"
-import { startGame, handleWordResult, resetToLobby } from "../game"
+import { startGame, handleWordResult, resetToLobby, confirmTurnStart } from "../game"
 import { wsToClientId, clientToRoom, pendingDisconnects } from "./state"
 
 const GRACE_PERIOD = 10_000
@@ -198,6 +198,17 @@ export const wsHandler = new Elysia().ws("/ws", {
         }
 
         startGame(room)
+        break
+      }
+
+      case "confirm-turn-start": {
+        const clientId = msg.clientId
+        const roomCode = clientToRoom.get(clientId)
+        if (!roomCode) return
+        const room = getRoom(roomCode)
+        if (!room) return
+
+        confirmTurnStart(room, clientId)
         break
       }
 

@@ -9,7 +9,7 @@ import {
 import { getWordPool } from "./words"
 import { startTimer, stopTimer } from "./timer"
 
-const TURN_START_DELAY = 3000
+const TURN_END_DELAY = 5000
 
 export function startGame(room: Room) {
   if (room.phase !== "lobby") return
@@ -57,20 +57,22 @@ export function startTurn(room: Room) {
     phase: "turn-start",
     turn: getTurnInfo(room),
   })
+}
 
-  setTimeout(() => {
-    if (room.phase !== "turn-start") return
-    room.phase = "turn-active"
+export function confirmTurnStart(room: Room, clientId: string) {
+  if (room.phase !== "turn-start") return
+  if (!room.currentTurn || room.currentTurn.explainerClientId !== clientId) return
 
-    broadcastToRoom(room, {
-      type: "phase-changed",
-      phase: "turn-active",
-      turn: getTurnInfo(room),
-    })
+  room.phase = "turn-active"
 
-    sendNextWord(room)
-    startTimer(room)
-  }, TURN_START_DELAY)
+  broadcastToRoom(room, {
+    type: "phase-changed",
+    phase: "turn-active",
+    turn: getTurnInfo(room),
+  })
+
+  sendNextWord(room)
+  startTimer(room)
 }
 
 export function sendNextWord(room: Room) {
@@ -175,12 +177,12 @@ export function endTurn(room: Room) {
     nextTeam,
   })
 
-  // Auto-start next turn after 5 seconds
+  // Auto-start next turn-start after delay (explainer still needs to confirm)
   setTimeout(() => {
     if (room.phase === "turn-end") {
       startTurn(room)
     }
-  }, 5000)
+  }, TURN_END_DELAY)
 }
 
 export function resetToLobby(room: Room) {

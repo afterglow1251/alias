@@ -2,6 +2,7 @@
 import { ref, watch, onMounted, onUnmounted, computed } from "vue"
 import { useRouter, useRoute } from "vue-router"
 import { Button } from "../components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog"
 import RoomCode from "../components/lobby/RoomCode.vue"
 import TeamPanel from "../components/lobby/TeamPanel.vue"
 import GameSettings from "../components/lobby/GameSettings.vue"
@@ -18,9 +19,8 @@ const router = useRouter()
 const route = useRoute()
 const store = useGameStore()
 
+const settingsOpen = ref(false)
 let cleanup: (() => void) | null = null
-let countdownTimer: ReturnType<typeof setInterval> | null = null
-const countdown = ref(3)
 
 onMounted(() => {
   cleanup = store.initStore()
@@ -28,32 +28,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   cleanup?.()
-  if (countdownTimer) {
-    clearInterval(countdownTimer)
-    countdownTimer = null
-  }
 })
-
-// Countdown 3 → 2 → 1 during turn-start phase
-watch(
-  () => store.state.phase,
-  (phase) => {
-    if (countdownTimer) {
-      clearInterval(countdownTimer)
-      countdownTimer = null
-    }
-    if (phase === "turn-start") {
-      countdown.value = 3
-      countdownTimer = setInterval(() => {
-        countdown.value--
-        if (countdown.value <= 0) {
-          clearInterval(countdownTimer!)
-          countdownTimer = null
-        }
-      }, 1000)
-    }
-  },
-)
 
 // If URL has roomCode but store doesn't, join the room
 watch(
@@ -155,7 +130,26 @@ const rightTeams = computed(() => {
         >
           ← назад
         </button>
-        <RoomCode v-if="store.state.roomCode" :code="store.state.roomCode" />
+        <div class="flex items-center gap-2">
+          <RoomCode v-if="store.state.roomCode" :code="store.state.roomCode" />
+          <Dialog v-if="!isPlaying" v-model:open="settingsOpen">
+            <DialogTrigger as-child>
+              <Button variant="outline" size="icon-sm" title="налаштування">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Налаштування гри</DialogTitle>
+              </DialogHeader>
+              <GameSettings
+                :settings="store.state.settings"
+                :is-host="store.state.isHost"
+                @update="store.updateSettings($event)"
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div
@@ -206,14 +200,6 @@ const rightTeams = computed(() => {
         <div class="flex flex-col gap-4">
           <!-- ========== LOBBY ========== -->
           <template v-if="!isPlaying">
-            <div class="rounded-lg bg-card border px-4 py-3">
-              <GameSettings
-                :settings="store.state.settings"
-                :is-host="store.state.isHost"
-                @update="store.updateSettings($event)"
-              />
-            </div>
-
             <button
               v-if="store.state.isHost && totalInTeams >= 2"
               @click="store.shuffleTeams()"
@@ -248,16 +234,17 @@ const rightTeams = computed(() => {
                     <p class="text-xs text-muted-foreground mb-2">
                       {{ currentTeamName }}
                     </p>
-                    <p class="text-lg font-semibold mb-4">
+                    <p class="text-lg font-semibold">
                       {{ store.state.currentTurn?.explainer.nickname }} пояснює!
                     </p>
-                    <div :key="countdown" class="text-5xl animate-countdown">{{ countdown }}...</div>
                   </div>
-                  <p
-                    v-if="store.isExplainer"
-                    class="text-xs text-muted-foreground rounded-full px-4 py-1.5 bg-secondary border"
-                  >
-                    приготуйся — це ти!
+                  <template v-if="store.isExplainer">
+                    <Button size="lg" @click="store.confirmTurnStart()">
+                      Почати хід
+                    </Button>
+                  </template>
+                  <p v-else class="text-sm text-muted-foreground animate-pulse">
+                    чекаємо поки {{ store.state.currentTurn?.explainer.nickname }} почне...
                   </p>
                 </div>
               </template>

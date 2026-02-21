@@ -112,7 +112,7 @@ const scorePercent = computed(() => {
           <span class="truncate">{{ player.nickname }}</span>
           <span v-if="player.isHost" class="text-[10px] ml-auto">👑</span>
           <button
-            v-if="isHost && !player.isHost && player.clientId !== clientId && !disabled"
+            v-if="isHost && !player.isHost && player.clientId !== clientId"
             class="ml-auto text-xs text-muted-foreground hover:text-destructive transition-colors px-0.5 cursor-pointer"
             @click="emit('kick', player.clientId)"
             title="вигнати"
