@@ -4,7 +4,7 @@ import {
   sendToClient,
   getTeamPlayers,
   getTurnInfo,
-  getTeamStateForBroadcast,
+  getTeamsBroadcast,
 } from "./rooms"
 import { getWordPool } from "./words"
 import { startTimer, stopTimer } from "./timer"
@@ -14,16 +14,15 @@ const TURN_START_DELAY = 3000
 export function startGame(room: Room) {
   if (room.phase !== "lobby") return
 
-  const teamA = getTeamPlayers(room, "A")
-  const teamB = getTeamPlayers(room, "B")
+  const teamCount = room.settings.teamCount
+  for (let i = 0; i < teamCount; i++) {
+    const players = getTeamPlayers(room, i)
+    if (players.length < 2) return
+  }
 
-  if (teamA.length < 2 || teamB.length < 2) return
-
-  room.teamAScore = 0
-  room.teamBScore = 0
-  room.teamAExplainerIndex = 0
-  room.teamBExplainerIndex = 0
-  room.currentTeam = "A"
+  room.teamScores = Array.from({ length: teamCount }, () => 0)
+  room.teamExplainerIndices = Array.from({ length: teamCount }, () => 0)
+  room.currentTeam = 0
   room.winner = null
   room.totalRounds = 0
 
@@ -35,7 +34,7 @@ export function startTurn(room: Room) {
   const players = getTeamPlayers(room, team)
   if (players.length === 0) return
 
-  const explainerIndex = team === "A" ? room.teamAExplainerIndex : room.teamBExplainerIndex
+  const explainerIndex = room.teamExplainerIndices[team] ?? 0
   const explainer = players[explainerIndex % players.length]
 
   const wordPool = getWordPool(200)
@@ -101,31 +100,23 @@ export function handleWordResult(room: Room, clientId: string, guessed: boolean)
   const word = room.currentTurn.currentWord
   if (!word) return
 
+  const team = room.currentTurn.team
+
   room.currentTurn.wordsResolved.push({ word, guessed })
 
   if (guessed) {
     room.currentTurn.scoreGained++
-    if (room.currentTurn.team === "A") {
-      room.teamAScore++
-    } else {
-      room.teamBScore++
-    }
+    room.teamScores[team]++
   } else {
-    // Skip penalty: -1 point
     room.currentTurn.scoreGained--
-    if (room.currentTurn.team === "A") {
-      room.teamAScore--
-    } else {
-      room.teamBScore--
-    }
+    room.teamScores[team]--
   }
 
-  const teams = getTeamStateForBroadcast(room)
+  const { teams } = getTeamsBroadcast(room)
   broadcastToRoom(room, {
     type: "word-resolved",
-    result: { word: guessed ? word : "???", guessed },
-    teamA: teams.teamA,
-    teamB: teams.teamB,
+    result: { word, guessed },
+    teams,
   })
 
   sendNextWord(room)
@@ -140,44 +131,47 @@ export function endTurn(room: Room) {
   room.phase = "turn-end"
   room.currentTurn.currentWord = null
 
-  const teams = getTeamStateForBroadcast(room)
+  const { teams } = getTeamsBroadcast(room)
   const turnInfo = getTurnInfo(room)!
 
   // Advance explainer index
   const currentTeam = room.currentTurn.team
   const teamPlayers = getTeamPlayers(room, currentTeam)
-  if (currentTeam === "A") {
-    room.teamAExplainerIndex = (room.teamAExplainerIndex + 1) % teamPlayers.length
-  } else {
-    room.teamBExplainerIndex = (room.teamBExplainerIndex + 1) % teamPlayers.length
+  if (teamPlayers.length > 0) {
+    room.teamExplainerIndices[currentTeam] = ((room.teamExplainerIndices[currentTeam] ?? 0) + 1) % teamPlayers.length
   }
 
-  // Check win condition
+  // Check win condition - find first team that reached scoreToWin
   const scoreToWin = room.settings.scoreToWin
-  if (room.teamAScore >= scoreToWin || room.teamBScore >= scoreToWin) {
-    const winner = room.teamAScore >= scoreToWin ? "A" as const : "B" as const
-    room.winner = winner
+  let winnerTeam: number | null = null
+  for (let i = 0; i < room.settings.teamCount; i++) {
+    if ((room.teamScores[i] ?? 0) >= scoreToWin) {
+      winnerTeam = i
+      break
+    }
+  }
+
+  if (winnerTeam !== null) {
+    room.winner = winnerTeam
     room.phase = "game-over"
 
     broadcastToRoom(room, {
       type: "game-over",
-      winner,
-      teamA: teams.teamA,
-      teamB: teams.teamB,
+      winner: winnerTeam,
+      teams,
     })
 
     return
   }
 
-  // Switch teams
-  const nextTeam = currentTeam === "A" ? "B" as const : "A" as const
+  // Switch to next team
+  const nextTeam = (currentTeam + 1) % room.settings.teamCount
   room.currentTeam = nextTeam
 
   broadcastToRoom(room, {
     type: "turn-summary",
     turn: turnInfo,
-    teamA: teams.teamA,
-    teamB: teams.teamB,
+    teams,
     nextTeam,
   })
 
@@ -193,10 +187,9 @@ export function resetToLobby(room: Room) {
   stopTimer(room)
   room.phase = "lobby"
   room.currentTurn = null
-  room.teamAScore = 0
-  room.teamBScore = 0
-  room.teamAExplainerIndex = 0
-  room.teamBExplainerIndex = 0
+  const teamCount = room.settings.teamCount
+  room.teamScores = Array.from({ length: teamCount }, () => 0)
+  room.teamExplainerIndices = Array.from({ length: teamCount }, () => 0)
   room.winner = null
   room.totalRounds = 0
 

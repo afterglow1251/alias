@@ -6,7 +6,6 @@
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "jsx": "preserve",
-    "jsxImportSource": "solid-js",
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
@@ -17,5 +16,5 @@
       "~/*": ["./src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src", "env.d.ts"]
 }

@@ -2,6 +2,7 @@ import type { ServerWebSocket } from "bun"
 import type { Room, RoomClient } from "./types"
 import type { RoomInfo, Player, TeamState, TurnInfo } from "../shared/types"
 import type { WSServerMessage } from "../shared/ws-types"
+import { TEAM_NAMES, DEFAULT_TEAM_COUNT } from "../shared/teams"
 
 const CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 let clientCounter = 0
@@ -35,6 +36,8 @@ export function createRoom(hostId: string, hostNickname: string, ws: ServerWebSo
     connected: true,
   }
 
+  const teamCount = DEFAULT_TEAM_COUNT
+
   const room: Room = {
     code,
     hostId,
@@ -42,14 +45,14 @@ export function createRoom(hostId: string, hostNickname: string, ws: ServerWebSo
     settings: {
       turnDuration: 60,
       scoreToWin: 30,
+      teamCount,
     },
     phase: "lobby",
-    teamAScore: 0,
-    teamBScore: 0,
-    teamAExplainerIndex: 0,
-    teamBExplainerIndex: 0,
+    teamScores: Array.from({ length: teamCount }, () => 0),
+    teamExplainerIndices: Array.from({ length: teamCount }, () => 0),
+    teamNames: TEAM_NAMES.slice(0, teamCount),
     currentTurn: null,
-    currentTeam: "A",
+    currentTeam: 0,
     timer: null,
     timeLeft: 0,
     winner: null,
@@ -104,7 +107,7 @@ export function removeClient(room: Room, clientId: string): boolean {
   return false
 }
 
-export function getTeamPlayers(room: Room, team: "A" | "B"): RoomClient[] {
+export function getTeamPlayers(room: Room, team: number): RoomClient[] {
   return Array.from(room.clients.values()).filter((c) => c.team === team)
 }
 
@@ -118,11 +121,12 @@ function toPlayer(c: RoomClient): Player {
   }
 }
 
-function toTeamState(room: Room, team: "A" | "B"): TeamState {
+function toTeamState(room: Room, teamIndex: number): TeamState {
   return {
-    players: getTeamPlayers(room, team).map(toPlayer),
-    score: team === "A" ? room.teamAScore : room.teamBScore,
-    currentExplainerIndex: team === "A" ? room.teamAExplainerIndex : room.teamBExplainerIndex,
+    name: room.teamNames[teamIndex] ?? TEAM_NAMES[teamIndex] ?? `Team ${teamIndex + 1}`,
+    players: getTeamPlayers(room, teamIndex).map(toPlayer),
+    score: room.teamScores[teamIndex] ?? 0,
+    currentExplainerIndex: room.teamExplainerIndices[teamIndex] ?? 0,
   }
 }
 
@@ -138,6 +142,10 @@ export function getTurnInfo(room: Room): TurnInfo | null {
   }
 }
 
+export function getAllTeamStates(room: Room): TeamState[] {
+  return Array.from({ length: room.settings.teamCount }, (_, i) => toTeamState(room, i))
+}
+
 export function getRoomInfo(room: Room, clientId: string): RoomInfo {
   const client = room.clients.get(clientId)
   return {
@@ -145,8 +153,7 @@ export function getRoomInfo(room: Room, clientId: string): RoomInfo {
     clientId,
     isHost: client?.isHost ?? false,
     players: Array.from(room.clients.values()).map(toPlayer),
-    teamA: toTeamState(room, "A"),
-    teamB: toTeamState(room, "B"),
+    teams: getAllTeamStates(room),
     settings: room.settings,
     phase: room.phase,
     currentTurn: getTurnInfo(room),
@@ -179,9 +186,6 @@ export function sendToClient(room: Room, clientId: string, message: WSServerMess
   }
 }
 
-export function getTeamStateForBroadcast(room: Room): { teamA: TeamState; teamB: TeamState } {
-  return {
-    teamA: toTeamState(room, "A"),
-    teamB: toTeamState(room, "B"),
-  }
+export function getTeamsBroadcast(room: Room): { teams: TeamState[] } {
+  return { teams: getAllTeamStates(room) }
 }

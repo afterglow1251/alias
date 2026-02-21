@@ -1,5 +1,6 @@
 import { Elysia } from "elysia"
 import type { WSClientMessage } from "../../shared/ws-types"
+import { TEAM_NAMES, MIN_TEAMS, MAX_TEAMS } from "../../shared/teams"
 import {
   createRoom,
   joinRoom,
@@ -8,7 +9,7 @@ import {
   broadcastToRoom,
   getRoomInfo,
   getTeamPlayers,
-  getTeamStateForBroadcast,
+  getTeamsBroadcast,
   sendToClient,
 } from "../rooms"
 import { startGame, handleWordResult, resetToLobby } from "../game"
@@ -85,13 +86,14 @@ export const wsHandler = new Elysia().ws("/ws", {
         if (!client) return
         if (room.phase !== "lobby") return
 
+        // Validate team index
+        if (typeof msg.team !== "number" || msg.team < 0 || msg.team >= room.settings.teamCount) return
+
         client.team = msg.team
 
-        const teams = getTeamStateForBroadcast(room)
         broadcastToRoom(room, {
           type: "team-updated",
-          teamA: teams.teamA,
-          teamB: teams.teamB,
+          ...getTeamsBroadcast(room),
         })
         break
       }
@@ -109,11 +111,9 @@ export const wsHandler = new Elysia().ws("/ws", {
 
         client.team = null
 
-        const teams = getTeamStateForBroadcast(room)
         broadcastToRoom(room, {
           type: "team-updated",
-          teamA: teams.teamA,
-          teamB: teams.teamB,
+          ...getTeamsBroadcast(room),
         })
         break
       }
@@ -126,12 +126,50 @@ export const wsHandler = new Elysia().ws("/ws", {
         if (!room || room.hostId !== clientId) return
         if (room.phase !== "lobby") return
 
+        // Handle teamCount changes
+        if (msg.settings.teamCount !== undefined) {
+          const newCount = msg.settings.teamCount
+          if (newCount < MIN_TEAMS || newCount > MAX_TEAMS) return
+
+          const oldCount = room.settings.teamCount
+
+          if (newCount !== oldCount) {
+            // Resize arrays
+            if (newCount > oldCount) {
+              // Grow arrays
+              for (let i = oldCount; i < newCount; i++) {
+                room.teamScores.push(0)
+                room.teamExplainerIndices.push(0)
+                room.teamNames.push(TEAM_NAMES[i] ?? `Team ${i + 1}`)
+              }
+            } else {
+              // Shrink arrays, unassign players from removed teams
+              for (const c of room.clients.values()) {
+                if (c.team !== null && c.team >= newCount) {
+                  c.team = null
+                }
+              }
+              room.teamScores.length = newCount
+              room.teamExplainerIndices.length = newCount
+              room.teamNames.length = newCount
+            }
+          }
+        }
+
         Object.assign(room.settings, msg.settings)
 
         broadcastToRoom(room, {
           type: "settings-updated",
           settings: room.settings,
         })
+
+        // Also broadcast team updates if team count changed
+        if (msg.settings.teamCount !== undefined) {
+          broadcastToRoom(room, {
+            type: "team-updated",
+            ...getTeamsBroadcast(room),
+          })
+        }
         break
       }
 
@@ -147,15 +185,16 @@ export const wsHandler = new Elysia().ws("/ws", {
           return
         }
 
-        const teamA = getTeamPlayers(room, "A")
-        const teamB = getTeamPlayers(room, "B")
-
-        if (teamA.length < 2 || teamB.length < 2) {
-          sendToClient(room, clientId, {
-            type: "error",
-            message: "Потрібно мінімум 2 гравці в кожній команді",
-          })
-          return
+        // Validate all teams have >= 2 players
+        for (let i = 0; i < room.settings.teamCount; i++) {
+          const players = getTeamPlayers(room, i)
+          if (players.length < 2) {
+            sendToClient(room, clientId, {
+              type: "error",
+              message: "Потрібно мінімум 2 гравці в кожній команді",
+            })
+            return
+          }
         }
 
         startGame(room)
@@ -188,18 +227,39 @@ export const wsHandler = new Elysia().ws("/ws", {
           const j = Math.floor(Math.random() * (i + 1))
           ;[inTeam[i], inTeam[j]] = [inTeam[j], inTeam[i]]
         }
-        // Split evenly between teams
-        const half = Math.ceil(inTeam.length / 2)
+        // Distribute across N teams using modulo
+        const teamCount = room.settings.teamCount
         for (let i = 0; i < inTeam.length; i++) {
-          inTeam[i].team = i < half ? "A" : "B"
+          inTeam[i].team = i % teamCount
         }
 
-        const teams = getTeamStateForBroadcast(room)
         broadcastToRoom(room, {
           type: "team-updated",
-          teamA: teams.teamA,
-          teamB: teams.teamB,
+          ...getTeamsBroadcast(room),
         })
+        break
+      }
+
+      case "update-team-name": {
+        const clientId = msg.clientId
+        const roomCode = clientToRoom.get(clientId)
+        if (!roomCode) return
+        const room = getRoom(roomCode)
+        if (!room) return
+        if (room.phase !== "lobby") return
+
+        const client = room.clients.get(clientId)
+        if (!client || client.team !== msg.team) return
+
+        // Validate team index
+        if (typeof msg.team !== "number" || msg.team < 0 || msg.team >= room.settings.teamCount) return
+
+        const name = msg.name.trim().slice(0, 16)
+        if (!name) return
+
+        room.teamNames[msg.team] = name
+
+        broadcastToRoom(room, { type: "team-name-updated", team: msg.team, name })
         break
       }
 
@@ -242,11 +302,9 @@ export const wsHandler = new Elysia().ws("/ws", {
         })
 
         // Update teams
-        const teams = getTeamStateForBroadcast(room)
         broadcastToRoom(room, {
           type: "team-updated",
-          teamA: teams.teamA,
-          teamB: teams.teamB,
+          ...getTeamsBroadcast(room),
         })
         break
       }

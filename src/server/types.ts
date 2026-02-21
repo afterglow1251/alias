@@ -1,17 +1,17 @@
 import type { ServerWebSocket } from "bun"
-import type { GamePhase, GameSettings, Player, WordResult } from "../shared/types"
+import type { GamePhase, GameSettings, WordResult } from "../shared/types"
 
 export interface RoomClient {
   ws: ServerWebSocket<any> | null
   clientId: string
   nickname: string
-  team: "A" | "B" | null
+  team: number | null
   isHost: boolean
   connected: boolean
 }
 
 export interface TurnData {
-  team: "A" | "B"
+  team: number
   explainerClientId: string
   wordsResolved: WordResult[]
   scoreGained: number
@@ -26,14 +26,13 @@ export interface Room {
   clients: Map<string, RoomClient>
   settings: GameSettings
   phase: GamePhase
-  teamAScore: number
-  teamBScore: number
-  teamAExplainerIndex: number
-  teamBExplainerIndex: number
+  teamScores: number[]
+  teamExplainerIndices: number[]
+  teamNames: string[]
   currentTurn: TurnData | null
-  currentTeam: "A" | "B"
+  currentTeam: number
   timer: ReturnType<typeof setInterval> | null
   timeLeft: number
-  winner: "A" | "B" | null
+  winner: number | null
   totalRounds: number
 }

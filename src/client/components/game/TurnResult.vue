@@ -1,0 +1,68 @@
+<script setup lang="ts">
+import { computed } from "vue"
+import type { TurnInfo, TeamState } from "../../../shared/types"
+import { TEAM_COLORS } from "../../../shared/teams"
+import { cn } from "../../lib/cn"
+
+const props = defineProps<{
+  turn: TurnInfo
+  teams: TeamState[]
+  nextTeam: number
+  scoreToWin: number
+}>()
+
+const guessed = computed(() => props.turn.wordsResolved.filter((w) => w.guessed).length)
+const skipped = computed(() => props.turn.wordsResolved.filter((w) => !w.guessed).length)
+const nextTeamColor = computed(() => TEAM_COLORS[props.nextTeam] ?? "#888")
+const nextTeamName = computed(() => props.teams[props.nextTeam]?.name ?? "???")
+const turnTeamName = computed(() => props.teams[props.turn.team]?.name ?? "???")
+</script>
+
+<template>
+  <div class="flex flex-col items-center gap-4 animate-fade-in">
+    <div class="text-center">
+      <p class="text-xs text-muted-foreground">
+        {{ turn.explainer.nickname }} — {{ turnTeamName }}
+      </p>
+      <div class="flex items-center justify-center gap-3 mt-2">
+        <span class="rounded-full px-3 py-1 text-sm font-semibold text-success bg-success/10 border border-success/20">
+          +{{ guessed }}
+        </span>
+        <span class="rounded-full px-3 py-1 text-sm font-semibold text-destructive bg-destructive/10 border border-destructive/20">
+          -{{ skipped }}
+        </span>
+        <span
+          :class="cn(
+            'text-4xl font-bold tabular-nums',
+            turn.scoreGained >= 0 ? 'text-foreground' : 'text-destructive',
+          )"
+        >
+          {{ turn.scoreGained > 0 ? '+' : '' }}{{ turn.scoreGained }}
+        </span>
+      </div>
+    </div>
+
+    <div class="w-full max-w-sm space-y-1 max-h-44 overflow-y-auto">
+      <div
+        v-for="(result, i) in turn.wordsResolved"
+        :key="i"
+        :class="cn(
+          'flex items-center justify-between rounded-lg px-3 py-1.5 text-xs animate-slide-up bg-white/[0.04]',
+          result.guessed
+            ? 'border-l-2 border-l-success text-success'
+            : 'border-l-2 border-l-destructive text-destructive',
+        )"
+        :style="{ animationDelay: `${i * 50}ms`, animationFillMode: 'both' }"
+      >
+        <span>{{ result.word }}</span>
+      </div>
+    </div>
+
+    <div
+      class="rounded-full px-4 py-1.5 text-xs font-medium animate-pulse border bg-card"
+      :style="{ color: nextTeamColor, borderColor: `${nextTeamColor}33` }"
+    >
+      далі: {{ nextTeamName }}...
+    </div>
+  </div>
+</template>
