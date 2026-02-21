@@ -28,9 +28,21 @@ export function startGame(room: Room) {
 }
 
 export function startTurn(room: Room) {
+  const teamCount = room.settings.teamCount
+
+  // Skip teams with no players
+  for (let i = 0; i < teamCount; i++) {
+    const players = getTeamPlayers(room, room.currentTeam)
+    if (players.length > 0) break
+    room.currentTeam = (room.currentTeam + 1) % teamCount
+  }
+
   const team = room.currentTeam
   const players = getTeamPlayers(room, team)
-  if (players.length === 0) return
+  if (players.length === 0) {
+    resetToLobby(room)
+    return
+  }
 
   const explainerIndex = room.teamExplainerIndices[team] ?? 0
   const explainer = players[explainerIndex % players.length]
@@ -121,10 +133,14 @@ export function handleWordResult(room: Room, clientId: string, guessed: boolean,
   }
 
   const { teams } = getTeamsBroadcast(room)
+  const resolvedAwardTeam = guessed
+    ? ((room.phase === "turn-last-word" && room.settings.lastWordForAll && awardTeam !== undefined && awardTeam >= 0 && awardTeam < room.settings.teamCount) ? awardTeam : team)
+    : undefined
   broadcastToRoom(room, {
     type: "word-resolved",
     result: { word, guessed },
     teams,
+    awardTeam: resolvedAwardTeam,
   })
 
   // If in last-word phase, end the turn after this word
@@ -231,6 +247,17 @@ export function editWordResult(room: Room, clientId: string, wordIndex: number, 
   const { teams } = getTeamsBroadcast(room)
   const turnInfo = getTurnInfo(room)!
 
+  // Check win condition after score edit
+  const scoreToWin = room.settings.scoreToWin
+  for (let i = 0; i < room.settings.teamCount; i++) {
+    if ((room.teamScores[i] ?? 0) >= scoreToWin) {
+      room.winner = i
+      room.phase = "game-over"
+      broadcastToRoom(room, { type: "game-over", winner: i, teams })
+      return
+    }
+  }
+
   broadcastToRoom(room, {
     type: "turn-summary",
     turn: turnInfo,
@@ -245,12 +272,30 @@ export function enterLastWordPhase(room: Room) {
     return
   }
 
+  // If explainer disconnected, skip last word phase
+  const explainer = room.clients.get(room.currentTurn.explainerClientId)
+  if (!explainer || !explainer.connected) {
+    endTurn(room)
+    return
+  }
+
   room.phase = "turn-last-word"
   broadcastToRoom(room, {
     type: "phase-changed",
     phase: "turn-last-word",
     turn: getTurnInfo(room),
   })
+}
+
+/** Called when the explainer disconnects or is removed mid-turn */
+export function handleExplainerGone(room: Room) {
+  if (!room.currentTurn) return
+  if (room.phase === "turn-last-word") {
+    endTurn(room)
+  } else if (room.phase === "turn-active") {
+    stopTimer(room)
+    endTurn(room)
+  }
 }
 
 export function restartGame(room: Room) {

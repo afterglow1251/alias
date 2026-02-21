@@ -8,6 +8,12 @@ export function startTimer(room: Room) {
   room.timeLeft = room.settings.turnDuration
 
   room.timer = setInterval(() => {
+    // Guard against stale callback after phase change
+    if (room.phase !== "turn-active") {
+      stopTimer(room)
+      return
+    }
+
     room.timeLeft--
 
     broadcastToRoom(room, { type: "timer-tick", timeLeft: room.timeLeft })

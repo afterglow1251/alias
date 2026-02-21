@@ -131,7 +131,12 @@ export const useGameStore = defineStore("game", () => {
       case "word-resolved":
         state.teams = msg.teams
         if (state.currentTurn) {
-          const delta = msg.result.guessed ? 1 : (state.settings.skipPenalty ? -1 : 0)
+          let delta = 0
+          if (msg.result.guessed) {
+            delta = (msg.awardTeam == null || msg.awardTeam === state.currentTurn.team) ? 1 : 0
+          } else if (state.settings.skipPenalty) {
+            delta = -1
+          }
           state.currentTurn = {
             ...state.currentTurn,
             wordsResolved: [...state.currentTurn.wordsResolved, msg.result],

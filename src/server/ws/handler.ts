@@ -12,7 +12,7 @@ import {
   getTeamsBroadcast,
   sendToClient,
 } from "../rooms"
-import { startGame, handleWordResult, resetToLobby, restartGame, confirmTurnStart, advanceTurn, editWordResult } from "../game"
+import { startGame, handleWordResult, resetToLobby, restartGame, confirmTurnStart, advanceTurn, editWordResult, handleExplainerGone } from "../game"
 import { wsToClientId, clientToRoom, pendingDisconnects } from "./state"
 
 const GRACE_PERIOD = 10_000
@@ -294,6 +294,11 @@ export const wsHandler = new Elysia().ws("/ws", {
           pendingDisconnects.delete(targetClientId)
         }
 
+        // End turn BEFORE removing if kicked player is the explainer
+        if (room.currentTurn?.explainerClientId === targetClientId) {
+          handleExplainerGone(room)
+        }
+
         // Remove from room
         removeClient(room, targetClientId)
         clientToRoom.delete(targetClientId)
@@ -376,6 +381,11 @@ export const wsHandler = new Elysia().ws("/ws", {
     if (client) {
       client.connected = false
       client.ws = null
+    }
+
+    // If this was the explainer mid-turn, end the turn
+    if (room.currentTurn?.explainerClientId === clientId) {
+      handleExplainerGone(room)
     }
 
     // Grace period — wait before full removal

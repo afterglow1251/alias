@@ -188,7 +188,7 @@ const rightTeams = computed(() => {
             :state="t.state"
             :my-team="store.myTeam"
             :is-host="store.state.isHost"
-            :disabled="isPlaying"
+            :disabled="isPlaying && store.myTeam !== null"
             :score-to-win="isPlaying ? store.state.settings.scoreToWin : undefined"
             :is-current-turn="store.state.currentTurn?.team === t.index"
             @join="store.joinTeam(t.index)"
@@ -228,6 +228,9 @@ const rightTeams = computed(() => {
 
           <!-- ========== GAME PHASES ========== -->
           <template v-else>
+            <p v-if="store.myTeam === null" class="text-sm text-muted-foreground text-center py-2 animate-pulse">
+              обери команду, щоб грати
+            </p>
             <div class="flex flex-col items-center">
               <!-- turn-start -->
               <template v-if="store.state.phase === 'turn-start'">
@@ -295,7 +298,7 @@ const rightTeams = computed(() => {
             :state="t.state"
             :my-team="store.myTeam"
             :is-host="store.state.isHost"
-            :disabled="isPlaying"
+            :disabled="isPlaying && store.myTeam !== null"
             :score-to-win="isPlaying ? store.state.settings.scoreToWin : undefined"
             :is-current-turn="store.state.currentTurn?.team === t.index"
             @join="store.joinTeam(t.index)"
@@ -315,9 +318,10 @@ const rightTeams = computed(() => {
           :state="team"
           :my-team="store.myTeam"
           :is-host="store.state.isHost"
-          disabled
+          :disabled="store.myTeam !== null"
           :score-to-win="store.state.settings.scoreToWin"
           :is-current-turn="store.state.currentTurn?.team === i"
+          @join="store.joinTeam(i)"
         />
       </div>
     </div>

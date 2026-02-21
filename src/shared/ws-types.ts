@@ -28,7 +28,7 @@ export type WSServerMessage =
   | { type: "settings-updated"; settings: GameSettings }
   | { type: "phase-changed"; phase: GamePhase; turn: TurnInfo | null }
   | { type: "new-word"; word: string }
-  | { type: "word-resolved"; result: WordResult; teams: TeamState[] }
+  | { type: "word-resolved"; result: WordResult; teams: TeamState[]; awardTeam?: number }
   | { type: "timer-tick"; timeLeft: number }
   | { type: "turn-summary"; turn: TurnInfo; teams: TeamState[]; nextTeam: number }
   | { type: "game-over"; winner: number; teams: TeamState[] }
