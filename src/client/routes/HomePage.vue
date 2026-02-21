@@ -29,8 +29,8 @@ function validateNickname(): boolean {
     error.value = "Як тебе звати? :)"
     return false
   }
-  if (name.length < 2) {
-    error.value = "Мінімум 2 символи"
+  if (name.length < 2 || name.length > 12) {
+    error.value = name.length < 2 ? "Мінімум 2 символи" : "Максимум 12 символів"
     return false
   }
   return true
@@ -79,13 +79,13 @@ function onRoomCodeInput(val: string) {
         <div>
           <div class="flex items-center justify-between mb-1.5">
             <label class="text-xs text-muted-foreground">твій нікнейм</label>
-            <span class="text-xs tabular-nums" :class="nickname.length < 2 ? 'text-destructive' : 'text-muted-foreground'">{{ nickname.length }}/20</span>
+            <span class="text-xs tabular-nums" :class="nickname.length < 2 || nickname.length > 12 ? 'text-destructive' : 'text-muted-foreground'">{{ nickname.length }}/12</span>
           </div>
           <Input
             :model-value="nickname"
             @update:model-value="onNicknameInput"
             placeholder="напиши ім'я..."
-            :max-length="20"
+            :max-length="12"
           />
         </div>
 
