@@ -116,7 +116,9 @@ export const useGameStore = defineStore("game", () => {
       case "phase-changed":
         state.phase = msg.phase
         state.currentTurn = msg.turn
-        state.currentWord = null
+        if (msg.phase !== "turn-last-word") {
+          state.currentWord = null
+        }
         if (msg.phase === "lobby") {
           turnSummary.value = null
         }
