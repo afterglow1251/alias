@@ -12,7 +12,7 @@ import {
   getTeamsBroadcast,
   sendToClient,
 } from "../rooms"
-import { startGame, handleWordResult, resetToLobby, confirmTurnStart, advanceTurn, editWordResult } from "../game"
+import { startGame, handleWordResult, resetToLobby, restartGame, confirmTurnStart, advanceTurn, editWordResult } from "../game"
 import { wsToClientId, clientToRoom, pendingDisconnects } from "./state"
 
 const GRACE_PERIOD = 10_000
@@ -178,11 +178,6 @@ export const wsHandler = new Elysia().ws("/ws", {
         const room = getRoom(roomCode)
         if (!room || room.hostId !== clientId) return
 
-        if (room.phase === "game-over") {
-          resetToLobby(room)
-          return
-        }
-
         // Validate all teams have >= 2 players
         for (let i = 0; i < room.settings.teamCount; i++) {
           const players = getTeamPlayers(room, i)
@@ -217,7 +212,7 @@ export const wsHandler = new Elysia().ws("/ws", {
         const room = getRoom(roomCode)
         if (!room) return
 
-        handleWordResult(room, clientId, msg.guessed)
+        handleWordResult(room, clientId, msg.guessed, msg.awardTeam)
         break
       }
 
@@ -315,6 +310,30 @@ export const wsHandler = new Elysia().ws("/ws", {
           type: "team-updated",
           ...getTeamsBroadcast(room),
         })
+        break
+      }
+
+      case "restart-game": {
+        const clientId = msg.clientId
+        const roomCode = clientToRoom.get(clientId)
+        if (!roomCode) return
+        const room = getRoom(roomCode)
+        if (!room || room.hostId !== clientId) return
+        if (room.phase !== "game-over") return
+
+        restartGame(room)
+        break
+      }
+
+      case "back-to-lobby": {
+        const clientId = msg.clientId
+        const roomCode = clientToRoom.get(clientId)
+        if (!roomCode) return
+        const room = getRoom(roomCode)
+        if (!room || room.hostId !== clientId) return
+        if (room.phase !== "game-over") return
+
+        resetToLobby(room)
         break
       }
 

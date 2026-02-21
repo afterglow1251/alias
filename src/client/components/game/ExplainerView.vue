@@ -2,18 +2,29 @@
 import { computed } from "vue"
 import Timer from "./Timer.vue"
 import WordCard from "./WordCard.vue"
+import { Button } from "../ui/button"
+import { TEAM_COLORS } from "../../../shared/teams"
 import { useGameStore } from "../../stores/game"
 import { cn } from "../../lib/cn"
 
 const store = useGameStore()
 
 const isLastWord = computed(() => store.state.phase === "turn-last-word")
+const showTeamPicker = computed(() => isLastWord.value && store.state.settings.lastWordForAll)
 
 const guessed = computed(() => store.state.currentTurn?.wordsResolved.filter((w) => w.guessed).length ?? 0)
 const skipped = computed(() => store.state.currentTurn?.wordsResolved.filter((w) => !w.guessed).length ?? 0)
 const reversedWords = computed(
   () => [...(store.state.currentTurn?.wordsResolved ?? [])].reverse(),
 )
+
+function awardToTeam(teamIndex: number) {
+  store.wordResult(true, teamIndex)
+}
+
+function nobodyGuessed() {
+  store.wordResult(false)
+}
 </script>
 
 <template>
@@ -27,7 +38,42 @@ const reversedWords = computed(
       поясни слово команді, не називай його!
     </p>
 
-    <WordCard :word="store.state.currentWord" @guessed="store.wordResult(true)" @skip="store.wordResult(false)" />
+    <!-- Team picker for last word -->
+    <template v-if="showTeamPicker">
+      <div
+        class="w-full max-w-sm h-44 rounded-lg bg-card border flex items-center justify-center"
+      >
+        <span class="text-3xl font-bold text-center px-6 break-words">{{ store.state.currentWord }}</span>
+      </div>
+
+      <p class="text-xs text-muted-foreground">хто вгадав?</p>
+      <div class="flex flex-wrap justify-center gap-2 w-full max-w-sm">
+        <Button
+          v-for="(team, i) in store.state.teams"
+          :key="i"
+          size="sm"
+          variant="outline"
+          class="cursor-pointer"
+          :style="{ color: TEAM_COLORS[i], borderColor: `${TEAM_COLORS[i]}66` }"
+          @click="awardToTeam(i)"
+        >
+          {{ team.name }}
+        </Button>
+      </div>
+      <Button
+        variant="destructive"
+        size="sm"
+        class="cursor-pointer"
+        @click="nobodyGuessed()"
+      >
+        ніхто
+      </Button>
+    </template>
+
+    <!-- Normal word card -->
+    <template v-else>
+      <WordCard :word="store.state.currentWord" @guessed="store.wordResult(true)" @skip="store.wordResult(false)" />
+    </template>
 
     <div class="flex items-center gap-2">
       <span class="rounded-full px-3 py-1 text-xs font-semibold text-success bg-success/10 border border-success/20">

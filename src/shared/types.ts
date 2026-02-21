@@ -19,6 +19,7 @@ export interface GameSettings {
   teamCount: number // 2-6
   skipPenalty: boolean // true = -1 for skip, false = 0
   lastWordInfinite: boolean // true = finish last word after timer
+  lastWordForAll: boolean // true = any team can guess last word
 }
 
 export type GamePhase = "lobby" | "turn-start" | "turn-active" | "turn-last-word" | "turn-end" | "game-over"

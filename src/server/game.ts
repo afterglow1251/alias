@@ -93,7 +93,7 @@ export function sendNextWord(room: Room) {
   })
 }
 
-export function handleWordResult(room: Room, clientId: string, guessed: boolean) {
+export function handleWordResult(room: Room, clientId: string, guessed: boolean, awardTeam?: number) {
   if (!room.currentTurn) return
   if (room.phase !== "turn-active" && room.phase !== "turn-last-word") return
   if (room.currentTurn.explainerClientId !== clientId) return
@@ -106,8 +106,15 @@ export function handleWordResult(room: Room, clientId: string, guessed: boolean)
   room.currentTurn.wordsResolved.push({ word, guessed })
 
   if (guessed) {
-    room.currentTurn.scoreGained++
-    room.teamScores[team]++
+    // In last-word phase with lastWordForAll, award to the chosen team
+    const targetTeam = (room.phase === "turn-last-word" && room.settings.lastWordForAll && awardTeam !== undefined && awardTeam >= 0 && awardTeam < room.settings.teamCount)
+      ? awardTeam
+      : team
+
+    if (targetTeam === team) {
+      room.currentTurn.scoreGained++
+    }
+    room.teamScores[targetTeam]++
   } else if (room.settings.skipPenalty) {
     room.currentTurn.scoreGained--
     room.teamScores[team]--
@@ -244,6 +251,30 @@ export function enterLastWordPhase(room: Room) {
     phase: "turn-last-word",
     turn: getTurnInfo(room),
   })
+}
+
+export function restartGame(room: Room) {
+  if (room.phase !== "game-over") return
+
+  const teamCount = room.settings.teamCount
+  for (let i = 0; i < teamCount; i++) {
+    const players = getTeamPlayers(room, i)
+    if (players.length < 2) {
+      sendToClient(room, room.hostId, {
+        type: "error",
+        message: "Потрібно мінімум 2 гравці в кожній команді",
+      })
+      return
+    }
+  }
+
+  room.teamScores = Array.from({ length: teamCount }, () => 0)
+  room.teamExplainerIndices = Array.from({ length: teamCount }, () => 0)
+  room.currentTeam = 0
+  room.winner = null
+  room.totalRounds = 0
+
+  startTurn(room)
 }
 
 export function resetToLobby(room: Room) {

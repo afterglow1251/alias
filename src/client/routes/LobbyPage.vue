@@ -278,7 +278,8 @@ const rightTeams = computed(() => {
                   :score-to-win="store.state.settings.scoreToWin"
                   :is-host="store.state.isHost"
                   @play-again="store.playAgain()"
-                  @back-to-lobby="handleLeave"
+                  @back-to-lobby="store.backToLobby()"
+                  @leave="handleLeave"
                 />
               </template>
             </div>

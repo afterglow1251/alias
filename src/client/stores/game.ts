@@ -37,7 +37,7 @@ function makeInitialState(): GameState {
     isHost: false,
     players: [],
     teams: makeDefaultTeams(DEFAULT_TEAM_COUNT),
-    settings: { turnDuration: 60, scoreToWin: 30, teamCount: DEFAULT_TEAM_COUNT, skipPenalty: true, lastWordInfinite: true },
+    settings: { turnDuration: 60, scoreToWin: 30, teamCount: DEFAULT_TEAM_COUNT, skipPenalty: true, lastWordInfinite: true, lastWordForAll: true },
     phase: "lobby",
     currentTurn: null,
     timeLeft: 0,
@@ -205,12 +205,16 @@ export const useGameStore = defineStore("game", () => {
     send({ type: "confirm-turn-start", clientId: clientId.value })
   }
 
-  function wordResult(guessed: boolean) {
-    send({ type: "word-result", clientId: clientId.value, guessed })
+  function wordResult(guessed: boolean, awardTeam?: number) {
+    send({ type: "word-result", clientId: clientId.value, guessed, awardTeam })
   }
 
   function playAgain() {
-    send({ type: "start-game", clientId: clientId.value })
+    send({ type: "restart-game", clientId: clientId.value })
+  }
+
+  function backToLobby() {
+    send({ type: "back-to-lobby", clientId: clientId.value })
   }
 
   function shuffleTeams() {
@@ -277,6 +281,7 @@ export const useGameStore = defineStore("game", () => {
     confirmTurnStart,
     wordResult,
     playAgain,
+    backToLobby,
     shuffleTeams,
     kickPlayer,
     advanceTurn,

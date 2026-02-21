@@ -14,6 +14,7 @@ const props = defineProps<{
 defineEmits<{
   playAgain: []
   backToLobby: []
+  leave: []
 }>()
 
 const winnerColor = computed(() => TEAM_COLORS[props.winner] ?? "#888")
@@ -56,16 +57,21 @@ const confettiItems = Array.from({ length: 30 }, () => ({
       {{ winnerName }} перемогли!
     </h2>
 
-    <div class="flex gap-3 mt-2">
-      <Button v-if="isHost" size="lg" @click="$emit('playAgain')">
+    <div v-if="isHost" class="flex gap-3 mt-2">
+      <Button size="lg" @click="$emit('playAgain')">
         ще раз!
       </Button>
       <Button variant="outline" size="lg" @click="$emit('backToLobby')">
-        назад
+        до лобі
       </Button>
     </div>
 
-    <p v-if="!isHost" class="text-xs text-muted-foreground">чекаємо на хоста...</p>
+    <div v-else class="flex flex-col items-center gap-2 mt-2">
+      <Button variant="outline" size="lg" @click="$emit('leave')">
+        вийти
+      </Button>
+      <p class="text-xs text-muted-foreground">чекаємо на хоста...</p>
+    </div>
 
     <div class="fixed inset-0 pointer-events-none overflow-hidden z-50">
       <div

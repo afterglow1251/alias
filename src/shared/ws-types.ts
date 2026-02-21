@@ -7,13 +7,15 @@ export type WSClientMessage =
   | { type: "leave-team"; clientId: string }
   | { type: "update-settings"; clientId: string; settings: Partial<GameSettings> }
   | { type: "start-game"; clientId: string }
-  | { type: "word-result"; clientId: string; guessed: boolean }
+  | { type: "word-result"; clientId: string; guessed: boolean; awardTeam?: number }
   | { type: "confirm-turn-start"; clientId: string }
   | { type: "shuffle-teams"; clientId: string }
   | { type: "kick-player"; clientId: string; targetClientId: string }
   | { type: "update-team-name"; clientId: string; team: number; name: string }
   | { type: "advance-turn"; clientId: string }
   | { type: "edit-word-result"; clientId: string; wordIndex: number; guessed: boolean }
+  | { type: "restart-game"; clientId: string }
+  | { type: "back-to-lobby"; clientId: string }
 
 // Server → Client
 export type WSServerMessage =

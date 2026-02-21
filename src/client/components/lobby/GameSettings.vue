@@ -119,6 +119,26 @@ const TEAM_COUNT_OPTIONS = Array.from(
         />
       </button>
     </div>
+    <div v-if="settings.lastWordInfinite" class="flex items-center justify-between gap-3">
+      <span class="text-sm text-muted-foreground">Останнє для всіх</span>
+      <button
+        @click="isHost && emit('update', { lastWordForAll: !settings.lastWordForAll })"
+        :class="[
+          'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
+          settings.lastWordForAll ? 'bg-primary' : 'bg-muted',
+          !isHost && 'opacity-50 cursor-not-allowed',
+        ]"
+        role="switch"
+        :aria-checked="settings.lastWordForAll"
+      >
+        <span
+          :class="[
+            'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-background shadow ring-0 transition-transform',
+            settings.lastWordForAll ? 'translate-x-5' : 'translate-x-0',
+          ]"
+        />
+      </button>
+    </div>
     <p v-if="!isHost" class="text-[11px] text-muted-foreground text-center pt-1">
       тільки хост може змінювати
     </p>
