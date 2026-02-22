@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select"
+import HelpTip from "../ui/HelpTip.vue"
 
 const props = defineProps<{
   settings: GameSettingsType
@@ -100,7 +101,10 @@ const TEAM_COUNT_OPTIONS = Array.from(
       </button>
     </div>
     <div class="flex items-center justify-between gap-3">
-      <span class="text-sm text-muted-foreground">Останнє слово</span>
+      <span class="text-sm text-muted-foreground flex items-center gap-1">
+        Останнє слово
+        <HelpTip text="Після закінчення таймера можна дограти поточне слово" />
+      </span>
       <button
         @click="isHost && emit('update', { lastWordInfinite: !settings.lastWordInfinite })"
         :class="[
@@ -120,7 +124,10 @@ const TEAM_COUNT_OPTIONS = Array.from(
       </button>
     </div>
     <div v-if="settings.lastWordInfinite" class="flex items-center justify-between gap-3">
-      <span class="text-sm text-muted-foreground">Останнє для всіх</span>
+      <span class="text-sm text-muted-foreground flex items-center gap-1">
+        Останнє для всіх
+        <HelpTip text="Останнє слово можуть вгадувати всі команди, не лише та що грає" />
+      </span>
       <button
         @click="isHost && emit('update', { lastWordForAll: !settings.lastWordForAll })"
         :class="[
