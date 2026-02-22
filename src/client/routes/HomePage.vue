@@ -53,13 +53,13 @@ function handleJoin() {
   router.push(`/lobby/${code}`)
 }
 
-function onNicknameInput(val: string) {
-  setNickname(val)
+function onNicknameInput(val: string | number) {
+  setNickname(String(val))
   error.value = ""
 }
 
-function onRoomCodeInput(val: string) {
-  roomCode.value = val.toUpperCase()
+function onRoomCodeInput(val: string | number) {
+  roomCode.value = String(val).toUpperCase()
   error.value = ""
 }
 </script>
@@ -95,23 +95,21 @@ function onRoomCodeInput(val: string) {
           створити кімнату 🏠
         </Button>
 
-        <template v-if="showJoin">
-          <div class="flex gap-2">
+        <div class="h-10">
+          <div v-if="showJoin" class="flex gap-2 h-full">
             <Input
               :model-value="roomCode"
               @update:model-value="onRoomCodeInput"
               placeholder="КОД"
               :max-length="5"
-              class="font-mono tracking-widest text-center text-lg"
+              class="!h-full font-mono tracking-widest text-center text-lg"
             />
-            <Button @click="handleJoin">→</Button>
+            <Button class="!h-full" @click="handleJoin">→</Button>
           </div>
-        </template>
-        <template v-else>
-          <Button class="w-full" variant="outline" size="lg" @click="showJoin = true">
+          <Button v-else class="w-full !h-full" variant="outline" @click="showJoin = true">
             приєднатися по коду
           </Button>
-        </template>
+        </div>
       </Card>
 
       <p
