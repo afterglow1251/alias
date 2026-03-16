@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import RoomCode from "../components/lobby/RoomCode.vue"
 import TeamPanel from "../components/lobby/TeamPanel.vue"
 import GameSettings from "../components/lobby/GameSettings.vue"
+import DiscordCard from "../components/DiscordCard.vue"
 import ExplainerView from "../components/game/ExplainerView.vue"
 import GuesserView from "../components/game/GuesserView.vue"
 import SpectatorView from "../components/game/SpectatorView.vue"
@@ -149,6 +150,19 @@ const rightTeams = computed(() => {
             <div v-if="store.state.roomCode" class="pt-2 border-t">
               <p class="text-xs text-muted-foreground mb-2">Код кімнати</p>
               <RoomCode :code="store.state.roomCode" />
+            </div>
+            <div class="pt-2 border-t flex justify-center">
+              <DiscordCard
+                display-name="afterglow"
+                username="your_afterglow"
+                avatar-url="/avatar.gif"
+                banner-url="/banner.png"
+                about-me="Developer of this game. Have fun!"
+                :roles="[
+                  { name: 'Developer', color: '#5865f2' },
+                  { name: 'Creator', color: '#eb459e' },
+                ]"
+              />
             </div>
           </DialogContent>
         </Dialog>
